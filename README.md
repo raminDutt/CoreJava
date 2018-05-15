@@ -1,2 +1,1 @@
-# coreJava
-#This is a test
+# core Java 8 practice excersise
