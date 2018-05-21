@@ -4,6 +4,13 @@ public class Circle  extends Shape{
 
 	private double radius;
 	
+	public static int counter;
+	static 
+	{
+		System.out.println("static initializer has been called: " + Thread.currentThread().getName());
+		counter = 1;
+	}
+	
 	public Circle()
 	{
 		this(null,0);
@@ -20,6 +27,7 @@ public class Circle  extends Shape{
 
 		return center;
 	}
+	
 	
 	@Override
 	public Circle clone() throws CloneNotSupportedException

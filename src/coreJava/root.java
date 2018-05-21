@@ -13,28 +13,24 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.io.RandomAccessFile;
 import java.io.StringWriter;
+import java.lang.reflect.Array;
 import java.math.BigInteger;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.CopyOption;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayDeque;
@@ -46,6 +42,7 @@ import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,64 +53,361 @@ import java.util.Random;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.IntSupplier;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import javax.crypto.spec.OAEPParameterSpec;
 import javax.imageio.ImageIO;
 
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
-import org.apache.commons.io.FileUtils;
-import org.apache.xerces.impl.xpath.regex.Match;
-
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 public final class root extends Applet {
 
-	@FunctionalInterface
-	public interface Ifunctional<T> {
-		public void accept(T t) throws Exception;
+	public static void main(String args[]) {
+		ch10q6();
 
 	}
 
-	public static int x = 10;
-	public static void main(String args[]) throws IOException {
+	public static void ch10q6() {
+		String directory = "/home/ramin/workspace/ch10";
+		Path directoryPath = Paths.get(directory);
+		ConcurrentHashMap<String, Set<Path>> concurrentHashMap = new ConcurrentHashMap<>();
 
+		try (Stream<Path> files = Files.list(directoryPath);) {
+			// Creating a List of tasks
+			List<CompletableFuture<Void>> tasks = files.map(
+					p -> {
+						CompletableFuture<Void> task = CompletableFuture
+								.runAsync(getTask(p, concurrentHashMap));
+						return task;
+					}).collect(Collectors.toList());
 
+			// creating a barrier and wait untill all concurrent tasks have been
+			// completed
+			CompletableFuture<Void> barrier = CompletableFuture.allOf(tasks
+					.toArray(new CompletableFuture[tasks.size()]));
+			barrier.join();
 
+			// Printing it out result
+
+			concurrentHashMap.forEach((k, v) -> {
+				System.out.println("Key: (" + k + ") Value= " + v);
+			});
+
+		} catch (IOException e) {
+
+			e.printStackTrace();
+		}
 	}
-	
-	public void f()
-	{
-		x = 15;
-		Runnable runnable = () -> {
-			x = 15;
+
+	private static Runnable getTask(Path p, ConcurrentMap<String, Set<Path>> map) {
+		Runnable task = () -> {
+			try (Stream<String> lines = Files.lines(p);) {
+				Stream<String> words = lines.flatMap(w -> {
+					return Arrays.stream((w.split("[\\s]")));
+				});
+				
+				words.forEach(w -> {
+					map.computeIfPresent(w, (k, v) -> {
+						v.add(p);
+						return v;
+					});
+					map.computeIfAbsent(w, k -> new HashSet<>()).add(p);
+				});
+			} catch (Exception exception) {
+				exception.printStackTrace();
+			}
 		};
+		return task;
 	}
 
-	public static void ch10q3d()
-	{
-		ExecutorService executorService;
-		//executorService.in
+	public static void ch10q5() {
+		String directory = "/home/ramin/workspace/ch10";
+		Path directoryPath = Paths.get(directory);
+
+		ConcurrentHashMap<String, Set<Path>> concurrentHashMap = new ConcurrentHashMap();
+		// Getting the list of all files
+		try (Stream<Path> files = Files.list(directoryPath);) {
+			List<Callable<Void>> tasks = files.map(
+					p -> {
+						Callable<Void> task = () -> {
+
+							// Making a stream of all words in the document
+							Stream<String> words = Files.lines(p).flatMap(
+									line -> {
+										String[] wordsArray = line
+												.split("[\\s]");
+										Stream<String> wordsStream = Stream
+												.of(wordsArray);
+										return wordsStream;
+									});
+
+							// Modifying the shared object: concurrentHashMap
+							words.forEach(w -> {
+								Set<Path> set = new HashSet();
+								set.add(p);
+								concurrentHashMap.merge(w, set, (
+										Set<Path> existingValue,
+										Set<Path> newValue) -> {
+									if (existingValue == null) {
+										return newValue;
+									} else {
+										existingValue.addAll(newValue);
+										return existingValue;
+									}
+								});
+							});
+
+							return null;
+						};
+						return task;
+					}).collect(Collectors.toList());
+
+			ExecutorService executorService = Executors.newCachedThreadPool();
+			try {
+				List<Future<Void>> results = executorService.invokeAll(tasks);
+				Iterator<Entry<String, Set<Path>>> iterator = concurrentHashMap
+						.entrySet().iterator();
+				while (iterator.hasNext()) {
+					Entry<String, Set<Path>> entry = iterator.next();
+					String key = entry.getKey();
+					Set paths = entry.getValue();
+					System.out.println("key: " + key + ": " + paths.toString());
+				}
+
+				System.out.println("*******");
+				System.out.println(concurrentHashMap.get("git"));
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
 	}
-	
+
+	public static void ch10q3g() {
+		String word = "git";
+		String directory = "/home/ramin/workspace/ch10";
+		Path directoryPath = Paths.get(directory);
+		// Create a stream of callables
+		try (Stream<Path> files = Files.list(directoryPath);) {
+			Stream<Callable<Path>> callables = files.map((Path path) -> {
+				Callable<Path> callable = () -> {
+					try (Stream<String> content = Files.lines(path);) {
+						boolean isFound = content.anyMatch((String w) -> w
+								.contains(word));
+						if (isFound) {
+							return path;
+						} else {
+							throw new ExecutionException(
+									"Something went wrong", null);
+						}
+					} catch (IOException exception) {
+						exception.printStackTrace();
+					}
+					return null;
+				};
+				return callable;
+			});
+
+			List<Callable<Path>> tasks = callables.collect(Collectors.toList());
+			ExecutorService executorService = Executors.newCachedThreadPool();
+			tasks.forEach((Callable<Path> task) -> {
+				Future<Path> future = executorService.submit(task);
+				try {
+					System.out.println(future.get());
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+			});
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	/**
+	 * Finding the first document containing the searched word using
+	 * completableFuture: using filter and findAny with streams
+	 */
+	public static void ch10q3f() {
+		String word = "git";
+		String directory = "/home/ramin/workspace/ch10";
+		Path directoryPath = Paths.get(directory);
+		// Create a stream of callables
+		try (Stream<Path> files = Files.list(directoryPath);) {
+			Stream<Callable<Path>> callables = files.map((Path path) -> {
+				Callable<Path> callable = () -> {
+					try (Stream<String> content = Files.lines(path);) {
+						boolean isFound = content.anyMatch((String w) -> w
+								.contains(word));
+						if (isFound) {
+							return path;
+						} else {
+							throw new ExecutionException(null);
+						}
+					} catch (IOException exception) {
+						exception.printStackTrace();
+					}
+					return null;
+				};
+				return callable;
+			});
+
+			List<Callable<Path>> tasks = callables.collect(Collectors.toList());
+			ExecutorService executorService = Executors.newCachedThreadPool();
+			try {
+				Path p = executorService.invokeAny(tasks);
+				System.out.println("Result = " + p);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	/**
+	 * Finding the first document containing the searched word using
+	 * completableFuture: using filter and findAny with streams
+	 */
+	public static void ch10q3e() {
+		String word = "git";
+		String directory = "/home/ramin/workspace/ch10";
+		Path directoryPath = Paths.get(directory);
+
+		try (Stream<Path> files = Files.list(directoryPath);) {
+			Stream<Path> searchResult = files
+					.filter((Path path) -> {
+						CompletableFuture<Optional<Path>> completableFuture = CompletableFuture.supplyAsync(() -> {
+							Optional<Path> optional = Optional.empty();
+							try (Stream<String> content = Files.lines(path)) {
+								boolean isFound = content.parallel().anyMatch(
+										w -> w.contains(word));
+								if (isFound) {
+									optional = Optional.of(path);
+								}
+
+							} catch (IOException ioException) {
+								ioException.printStackTrace();
+							}
+							return optional;
+						});
+
+						try {
+							Optional<Path> result = completableFuture.get();
+							return result.isPresent() ? true : false;
+						} catch (Exception e) {
+
+							e.printStackTrace();
+						}
+
+						return false;
+					});
+
+			// Printing result: all documents containing the word
+			long start = System.currentTimeMillis();
+			// searchResult.forEach(System.out::println);
+
+			// Finding the first document only
+			System.out.println(searchResult.findAny().get());
+			long end = System.currentTimeMillis();
+
+			System.out
+					.println("Time: " + Math.subtractExact(end, start) + "ms");
+		} catch (IOException ioException) {
+			ioException.printStackTrace();
+		}
+	}
+
+	/**
+	 * This api finds the documents containing the word but it searches through
+	 * all the document. It does not cancel the other threads once the first
+	 * document containing the word has been found. Hence, it finds all
+	 * documents containing the word
+	 */
+	public static void ch10q3d() {
+		String word = "git";
+		String stringPath = "/home/ramin/workspace/ch10";
+		Path path = Paths.get(stringPath);
+
+		try (Stream<Path> files = Files.list(path)) {
+
+			List<CompletableFuture<Optional<Path>>> searchResult = files
+					.map((Path p) -> {
+						CompletableFuture<Optional<Path>> completableFutureOptional = CompletableFuture
+								.supplyAsync(() -> {
+									boolean result = false;
+									try {
+										result = Files.lines(p).anyMatch(
+												(String s) -> s.contains(word));
+									} catch (IOException exception) {
+										exception.printStackTrace();
+									}
+									Optional<Path> optional = Optional.empty();
+									if (result) {
+										optional = Optional.of(p);
+									}
+									return optional;
+								});
+
+						return completableFutureOptional;
+					}).collect(Collectors.toList());
+
+			searchResult.forEach(completableFuture -> {
+
+				try {
+
+					if (!completableFuture.isCompletedExceptionally()) {
+
+						Optional<Path> opt = completableFuture.get();
+
+						if (opt.isPresent()) {
+							System.out.println(opt.get()
+									+ " : "
+									+ completableFuture
+											.isCompletedExceptionally());
+						}
+
+					}
+				} catch (Exception e) { // TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+
+				});
+
+		} catch (Exception exception) {
+			exception.printStackTrace();
+		}
+
+	}
+
 	public static void ch10q3c() {
 		String word = "git";
 		String p = "/home/ramin/workspace/ch10";
@@ -130,9 +424,7 @@ public final class root extends Applet {
 										s -> s.contains(word));
 								if (found) {
 									result = path.toString();
-								}
-								else
-								{
+								} else {
 									throw new Exception();
 								}
 
@@ -140,23 +432,23 @@ public final class root extends Applet {
 
 								e.printStackTrace();
 							}
-							
-							
+
 							return result;
 						});
 						return future;
 					});
 
-			CompletableFuture<String>[] completableFutures = stream.toArray(CompletableFuture[]::new);
-			CompletableFuture<Object> result = CompletableFuture.anyOf(completableFutures);
+			CompletableFuture<String>[] completableFutures = stream
+					.toArray(CompletableFuture[]::new);
+			CompletableFuture<Object> result = CompletableFuture
+					.anyOf(completableFutures);
 			System.out.println(result.get());
 		} catch (Exception exception) {
 			exception.printStackTrace();
 		}
 
-		
-
 	}
+
 	public static void ch10q3b() {
 		String word = "git";
 		String p = "/home/ramin/workspace/ch10";
@@ -167,27 +459,24 @@ public final class root extends Applet {
 					.list(p2)
 					.filter(path -> {
 						boolean isFound = false;
-						try(Stream<String> lines = Files.lines(path))
-						{
-							isFound = lines.parallel().anyMatch(line -> line.contains(word));
-						}
-						catch(Exception exception)
-						{
+						try (Stream<String> lines = Files.lines(path)) {
+							isFound = lines.parallel().anyMatch(
+									line -> line.contains(word));
+						} catch (Exception exception) {
 							exception.printStackTrace();
-							
+
 						}
 						return isFound;
 					}).findAny();
-			
-			//stream.forEach(System.out::println);
+
+			// stream.forEach(System.out::println);
 			System.out.println(result.get());
-					
-					
+
 		} catch (Exception exception) {
 			exception.printStackTrace();
 		}
 	}
-			
+
 	public static void ch10q3a() {
 		String word = "git";
 		String p = "/home/ramin/workspace/ch10";
@@ -215,15 +504,16 @@ public final class root extends Applet {
 						return future;
 					});
 
-			CompletableFuture<String>[] completableFutures = stream.toArray(CompletableFuture[]::new);
-			CompletableFuture<Void> result = CompletableFuture.allOf(completableFutures);
+			CompletableFuture<String>[] completableFutures = stream
+					.toArray(CompletableFuture[]::new);
+			CompletableFuture<Void> result = CompletableFuture
+					.allOf(completableFutures);
 			result.join();
-			
+
 			result.thenApply(v -> {
 				System.out.println("ramin");
-				
-				for(CompletableFuture<String> completableFuture : completableFutures)
-				{
+
+				for (CompletableFuture<String> completableFuture : completableFutures) {
 					try {
 						System.out.println(completableFuture.get());
 					} catch (Exception e) {
@@ -236,8 +526,6 @@ public final class root extends Applet {
 		} catch (Exception exception) {
 			exception.printStackTrace();
 		}
-
-		
 
 	}
 
@@ -302,7 +590,7 @@ public final class root extends Applet {
 			int[] array1 = generator.ints(size, 0, size + 1).toArray();
 			int[] array2 = Arrays.copyOf(array1, array1.length);
 
-			Function<Consumer<Void>, Long> function = action -> {
+			Function<Consumer<?>, Long> function = action -> {
 				long start = System.currentTimeMillis();
 				action.accept(null);
 				long end = System.currentTimeMillis();
@@ -374,7 +662,7 @@ public final class root extends Applet {
 	private static void ch10Q1b() {
 		String p = "/home/ramin/workspace/ch10";
 		File file = new File(p);
-		String word = "git ";
+		String word = "git";
 
 		try (Stream<Path> files = Files.list(file.toPath());) {
 			System.out.println("cpu="
@@ -406,7 +694,7 @@ public final class root extends Applet {
 
 		String p = "/home/ramin/workspace/ch10";
 		File file = new File(p);
-		String word = "git ";
+		String word = "git";
 
 		try (Stream<Path> files = Files.list(file.toPath());) {
 			System.out.println("cpu="

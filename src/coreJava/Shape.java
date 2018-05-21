@@ -3,7 +3,7 @@ package coreJava;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-public abstract class Shape<T> /*implements Cloneable*/{
+public abstract class Shape<T> implements Cloneable{
 	protected Point center;
 	
 	public void moveBy(double dx, double dy)
