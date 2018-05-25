@@ -25,6 +25,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
+import java.nio.charset.MalformedInputException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -35,6 +36,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -53,6 +55,9 @@ import java.util.Random;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.Vector;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,14 +66,24 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAccumulator;
+import java.util.concurrent.atomic.LongAdder;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
@@ -77,9 +92,348 @@ import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 
 public final class root extends Applet {
 
-	public static void main(String args[]) {
-		ch10q6();
+	public static void main(String args[]) throws Exception{
 
+			ch10q10();
+
+		/*
+		 * String dummyFile = "dummyFile";
+		 * 
+		 * if(Paths.get(dummyFile).toFile().getName().equals(dummyFile)) {
+		 * System.out.println("Yes"); }else {
+		 * System.out.println(Paths.get(dummyFile).getFileName()); }
+		 */
+	}
+
+	private static void ch10q10(){
+		BlockingQueue<Path> blockingQueue = new LinkedBlockingQueue(1000);
+		Path directory = Paths.get("/home/ramin/GitViewstore");
+		String dummyFile = "dummyFile";
+		String word = "git";
+		
+		
+		Callable<Void> producerTask = () -> {
+			try (Stream<Path> stream = Files.list(directory);) {
+				List<Path> paths = stream.collect(Collectors.toList());
+
+				int i = 0;
+				while (i < paths.size()) {
+					Path path = paths.get(i);
+					if (path.toFile().isDirectory()) {
+						List<Path> subDirectoryPath = Files.list(path).collect(
+								Collectors.toList());
+						paths.addAll(subDirectoryPath);
+
+					} else {
+						//System.out.println(Thread.currentThread().getName() + "Producer Putting = " + path);
+						blockingQueue.put(path);
+						
+					}
+					i++;
+				}
+				blockingQueue.put(Paths.get(dummyFile));
+				return null;
+
+			} catch (Exception exception) {
+				exception.printStackTrace();
+			}
+			return null;
+		};
+
+		AtomicBoolean finished = new AtomicBoolean(true);
+		// Consumer
+		Callable<Void> consumerTask = () -> {
+
+			while (finished.get()) {
+				
+				Path path = blockingQueue.take();
+				//System.out.println(Thread.currentThread().getName() + ": Consumer Taking = " + finished.get() + " " + path);
+				File file = path.toFile();
+				if (file.getName().equals(dummyFile)) {
+					finished.set(false);
+					System.out.println("CONSUMER COMPLETED !!!!");
+					break;
+					
+				}
+				
+
+				try(Stream<String> lines = Files.lines(path);)
+				{
+					boolean found = lines.anyMatch(s -> s.contains(word));
+					if(found)
+					{
+						System.out.println(Thread.currentThread().getName() +  ": Consumer Match Found = " + finished.get() + " " + path);
+					}
+					
+				}
+				catch(Exception exception)
+				{
+					//Expected Error duw to different file types
+					if(!(exception.getCause() instanceof MalformedInputException))
+					{
+						exception.printStackTrace();
+					}
+				
+				}
+				//System.out.println(Thread.currentThread().getName() + ": Consumer Finished = " + finished.get() + " " + path);
+
+			}
+			return null;
+		};
+
+		//Producer Thread
+		ExecutorService executorService = Executors.newCachedThreadPool();
+		executorService.submit(producerTask);
+
+		
+		//Consumer Thread
+		int logicalCore = Runtime.getRuntime().availableProcessors();
+		List<Future<Void>> consumers = new ArrayList<Future<Void>>();
+		int i = 0;
+		while(i < logicalCore)
+		{
+			Future<Void> future = executorService.submit(consumerTask);
+			consumers.add(future);
+			i++;
+		}
+		
+		try {
+			executorService.shutdown();
+			if(!executorService.awaitTermination(60, TimeUnit.SECONDS))
+			{
+				System.out.println("shutting Down Now");
+				executorService.shutdownNow();
+				System.out.println("Pool shutdown");
+			}
+			if(!executorService.awaitTermination(60, TimeUnit.SECONDS))
+			{
+				System.err.println("Pool did not terminate");
+			}
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+
+	}
+
+	/**
+	 * Find all files in directories and sub directories via collection
+	 */
+	private static void ch10q10a() {
+		Path directory = Paths.get("/home/ramin/GitViewstore");
+
+		List<Path> paths = null;
+		;
+		try {
+			paths = Files.list(directory).collect(Collectors.toList());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		AtomicBoolean flag = new AtomicBoolean(true);
+		while (flag.get()) {
+			flag.set(false);
+
+			// Using parallel stream is faster
+			paths = paths.stream().flatMap(path -> {
+				File file = path.toFile();
+				Stream<Path> result = null;
+				if (!file.isDirectory()) {
+					result = Stream.<Path> of(path);
+				} else {
+
+					try {
+						result = Files.list(path);
+					} catch (IOException exception) {
+						exception.printStackTrace();
+					}
+				}
+				return result;
+			}).peek(p -> {
+				if (p.toFile().isDirectory()) {
+					flag.set(true);
+				}
+			}).collect(Collectors.toList());
+
+		}
+
+		paths.forEach(System.out::println);
+		System.out.println("size = " + paths.size());
+
+	}
+
+	/**
+	 * Find all files in directories and sub directories via collection
+	 */
+	private static void ch10q10b() {
+		Path directory = Paths.get("/home/ramin/GitViewstore");
+
+		try (Stream<Path> stream = Files.list(directory);) {
+			// List<Path> paths = stream.collect(Collectors.toList());
+			List<Path> paths = stream.collect(Collectors
+					.toCollection(() -> new LinkedList<Path>()));
+
+			int i = 0;
+			while (i < paths.size()) {
+				Path path = paths.get(i);
+				if (path.toFile().isDirectory()) {
+					paths.remove(i);
+					List<Path> subDirectoryPath = Files
+							.list(path)
+							.collect(
+									Collectors
+											.toCollection(() -> new LinkedList<Path>()));
+					// List<Path> subDirectoryPath =
+					// Files.list(path).collect(Collectors.toList());
+					paths.addAll(subDirectoryPath);
+
+				} else {
+					i++;
+				}
+			}
+			paths.forEach(System.out::println);
+			System.out.println("size = " + paths.size());
+
+		} catch (IOException exception) {
+			exception.printStackTrace();
+		}
+
+	}
+
+	public static void ch10q9() {
+		List<Integer> vector = new Vector<Integer>();
+		LongAccumulator max = new LongAccumulator((x, y) -> (x >= y) ? x : y,
+				-1);
+
+		LongAccumulator min = new LongAccumulator((x, y) -> (x == -1) ? y
+				: (x < y) ? x : y, -1);
+
+		LongAccumulator accumulator = min;
+		Supplier<Callable<Void>> supplier = () -> {
+			Callable<Void> task = () -> {
+				int number = new Random().nextInt(100);
+				accumulator.accumulate(number);
+				vector.add(number);
+				return null;
+			};
+			return task;
+
+		};
+		List<Callable<Void>> tasks = Stream.generate(supplier).limit(1000)
+				.collect(Collectors.toList());
+		ExecutorService executorService = Executors.newCachedThreadPool();
+		try {
+			List<Future<Void>> futures = executorService.invokeAll(tasks);
+			System.out.println(vector);
+			System.out.println(accumulator.get());
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		executorService.shutdown();
+
+	}
+
+	private static void ch10q8a() {
+		AtomicLong atomicLong = new AtomicLong();
+
+		ExecutorService executorService = Executors.newCachedThreadPool();
+		List<Callable<Void>> tasks = new ArrayList<>();
+		int i = 0;
+		while (i < 1000) {
+			Callable<Void> task = () -> {
+				int j = 0;
+				while (j < 100000) {
+					atomicLong.incrementAndGet();
+					j++;
+				}
+				return null;
+			};
+			tasks.add(task);
+			i++;
+		}
+
+		try {
+			long start = System.currentTimeMillis();
+			executorService.invokeAll(tasks);
+			long end = System.currentTimeMillis();
+
+			System.out.println("atomicLong time: "
+					+ Math.subtractExact(end, start) + "ms + atomicLong="
+					+ atomicLong.get());
+			executorService.shutdown();
+
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
+	public static void ch10q8b() {
+		LongAdder longAdder = new LongAdder();
+		List<Callable<Void>> tasks = IntStream.generate(() -> 1).limit(1000)
+				.boxed().map(index -> {
+					Callable<Void> task = () -> {
+						int j = 0;
+						while (j < 100000) {
+							longAdder.increment();
+							j++;
+						}
+						return null;
+					};
+					return task;
+				}).collect(Collectors.toList());
+
+		ExecutorService executorService = Executors.newCachedThreadPool();
+
+		try {
+			long start = System.currentTimeMillis();
+			executorService.invokeAll(tasks);
+			long end = System.currentTimeMillis();
+			System.out.println("longAdder time: "
+					+ Math.subtractExact(end, start) + " ms + longAdder="
+					+ longAdder.sum());
+			executorService.shutdown();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	public static void ch10q7() {
+		ConcurrentHashMap<String, Long> concurrentHashMap = new ConcurrentHashMap<>();
+		int i = 0;
+		while (i < 10) {
+			Random generator = new Random();
+			String key = generateRandomWord(1 + generator.nextInt(10));
+			long value = generator.nextInt(100);
+			concurrentHashMap.put(key, value);
+			i++;
+		}
+		System.out.println(concurrentHashMap);
+		BiFunction<Entry<String, Long>, Entry<String, Long>, Entry<String, Long>> reducer = (
+				e1, e2) -> {
+			return e1.getValue() > e2.getValue() ? e1 : e2;
+		};
+		Entry<String, Long> result = concurrentHashMap
+				.reduceEntries(2, reducer);
+		System.out.println(result);
+
+	}
+
+	private static String generateRandomWord(int length) {
+		Random genRandom = new Random();
+		StringBuilder builder = new StringBuilder();
+		int i = 0;
+		while (i < length) {
+			char letter = (char) (97 + genRandom.nextInt(26));
+			builder.append(letter);
+			i++;
+		}
+		return builder.toString();
 	}
 
 	public static void ch10q6() {
@@ -100,7 +454,7 @@ public final class root extends Applet {
 			// completed
 			CompletableFuture<Void> barrier = CompletableFuture.allOf(tasks
 					.toArray(new CompletableFuture[tasks.size()]));
-			barrier.join();
+			barrier.join(); // This is important
 
 			// Printing it out result
 
@@ -120,7 +474,7 @@ public final class root extends Applet {
 				Stream<String> words = lines.flatMap(w -> {
 					return Arrays.stream((w.split("[\\s]")));
 				});
-				
+
 				words.forEach(w -> {
 					map.computeIfPresent(w, (k, v) -> {
 						v.add(p);
