@@ -13,12 +13,13 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.io.Reader;
 import java.io.StringWriter;
-import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -36,7 +37,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -46,6 +46,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -56,7 +57,6 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.Vector;
-import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -65,15 +65,14 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAccumulator;
 import java.util.concurrent.atomic.LongAdder;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
@@ -89,30 +88,413 @@ import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.State;
 
-public final class root extends Applet {
+public class root {
 
-	public static void main(String args[]) throws Exception{
-
-			ch10q10();
-
-		/*
-		 * String dummyFile = "dummyFile";
-		 * 
-		 * if(Paths.get(dummyFile).toFile().getName().equals(dummyFile)) {
-		 * System.out.println("Yes"); }else {
-		 * System.out.println(Paths.get(dummyFile).getFileName()); }
-		 */
+	public static void main(String args[]) throws Exception {
+		// org.openjdk.jmh.Main.main(args);
+		ch10q12();
 	}
 
-	private static void ch10q10(){
+	public static void ch10q12() {
+		// Get all files
+		Path directory = Paths.get("/home/ramin/GitViewstore");
+		List<Path> files = new ArrayList<Path>();
+		try {
+			List<Path> paths = Files.list(directory).collect(
+					Collectors.toCollection(LinkedList::new));
+			int index = 0;
+			while (index < paths.size()) {
+				Path path = paths.get(index);
+				File file = path.toFile();
+				if (file.isDirectory()) {
+					List<Path> subDirectory = Files.list(path).collect(
+							Collectors.toCollection(LinkedList::new));
+					paths.addAll(subDirectory);
+
+				} else {
+					files.add(path);
+				}
+				index++;
+
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		List<Callable<Map<String, Integer>>> tasks = files.stream()
+				.map(path -> {
+
+					Callable<Map<String, Integer>> task = () -> 
+					{
+						System.out.println(Thread.currentThread().getName() + ": Started ...");
+						Map<String, Integer> frequency = new HashMap();
+						try(Stream<String> lines = Files.lines(path);)
+						{
+							Stream<String> words = lines.flatMap(line -> {
+								return Stream.of(line.split("\\s"));
+							});
+							words.forEach(word -> {
+								frequency.merge(word, 1, (x,y) -> x+y);
+							});
+						}
+						catch(Exception exception)
+						{
+							if(!(exception.getCause() instanceof MalformedInputException))
+							{
+								exception.printStackTrace();
+							}
+							
+						}
+						System.out.println(Thread.currentThread().getName() + ": COMPLETED!!!");
+						return frequency;
+					};
+					return task;
+				}).collect(Collectors.toList());
+
+		ExecutorService executorService = Executors.newCachedThreadPool();
+		try {
+			List<Future<Map<String, Integer>>> futures = executorService
+					.invokeAll(tasks);
+			//Merging
+			Map<String, Integer> finalWordFrequency = new HashMap<>();
+			for (Future<Map<String, Integer>> future : futures) 
+			{
+				Map<String, Integer> fileWordFrequency = future.get();
+				fileWordFrequency.forEach((key, value) -> {
+					finalWordFrequency.merge(key, value, (x, y) -> x + y);
+				});
+			}
+			
+			//Sorting 
+			List<Entry<String, Integer>> list = new ArrayList<>(
+					finalWordFrequency.entrySet());
+			Comparator<Entry<String, Integer>> comparator = ((e1, e2) -> {
+				if (e1.getValue() < e2.getValue()) {
+					return 1;
+				}
+
+				if (e1.getValue() == e2.getValue()) {
+					return 0;
+				}
+
+				return -1;
+			});
+			Collections.sort(list, comparator);
+			
+			//Printing only the 10 most used words
+			list.subList(0, 10).forEach(entry -> {
+				System.out.println("(" + entry.getKey() + ", " + entry.getValue()
+						+ ")");
+			});
+
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		executorService.shutdown();
+		System.out.println("executorService has been shutdown successfully.");
+
+	}
+
+	private static StringBuilder getDummyFileName() {
+		Random generator = new Random();
+		StringBuilder builder = new StringBuilder();
+		int size = generator.nextInt(10) + 4;
+		int j = 0;
+		while (j < size) {
+			char letter = (char) (generator.nextInt(25) + 97);
+			builder.append(letter);
+			j++;
+		}
+		return builder;
+	}
+
+	public static void ch10q11() {
+
+		BlockingQueue<Path> blockingQueue = new LinkedBlockingQueue<>(1000);
+		BlockingQueue<Map<String, Integer>> blockingQueue2 = new LinkedBlockingQueue<>();
+		Path directory = Paths.get("/home/ramin/GitViewstore");
+		// Path directory = Paths.get("/home/ramin/workspace/ch10");
+		String dummyFile = getDummyFileName().toString();
+
+		Callable<Void> producerTask = getProducerCh10Q10(blockingQueue,
+				dummyFile, directory);
+
+		Callable<Void> consumerTask = getConsumerTaskCh10Q11(blockingQueue,
+				blockingQueue2, dummyFile);
+
+		Callable<Void> getTenMostFrequentlyUsedWords = () -> {
+			System.out.println(Thread.currentThread().getName()
+					+ ": MOST_FREQ_TASK Started ...");
+			Map<String, Integer> result = new HashMap<>();
+
+			while (true) {
+
+				// System.out.println(Thread.currentThread().getName() +
+				// ": MOST_FREQ_TASK start taking");
+				Map<String, Integer> wordFrequenciesMap = blockingQueue2.take();
+				// System.out.println(Thread.currentThread().getName() +
+				// ": MOST_FREQ_TASK end taking");
+				if (wordFrequenciesMap.containsKey(dummyFile)) {
+					System.out.println(wordFrequenciesMap);
+					System.out.println(Thread.currentThread().getName()
+							+ ": MOST_FREQ_TASK Found DummyFile (" + dummyFile
+							+ ")");
+
+					// Compute the 10 most common words
+					Comparator<Entry<String, Integer>> comparator = (x, y) -> {
+						if (x.getValue() > y.getValue()) {
+							return -1;
+						}
+						if (x.getValue() == y.getValue()) {
+							return 0;
+						}
+						return 1;
+					};
+					result.entrySet()
+							.stream()
+							.sorted(comparator)
+							.limit(10)
+							.forEach(
+									e -> {
+										System.out.println("(" + e.getKey()
+												+ ", " + e.getValue());
+									});
+
+					/*
+					 * result.entrySet() .stream() .sorted(comparator)
+					 * .limit(10) .collect( Collectors .<Entry<String, Integer>,
+					 * String, Integer, LinkedHashMap<String, Integer>> toMap(
+					 * Entry::getKey, e -> e.getValue(), (x, y) -> x,
+					 * LinkedHashMap::new)) .forEach((k, v) -> {
+					 * System.out.println("(" + k + ", " + v); });
+					 */
+
+					break;
+				} else {
+					Iterator<Entry<String, Integer>> it = wordFrequenciesMap
+							.entrySet().iterator();
+					while (it.hasNext()) {
+
+						Entry<String, Integer> entry = it.next();
+						result.merge(entry.getKey(), entry.getValue(),
+								(x, y) -> x + y);
+					}
+
+				}
+			}
+			System.out.println(Thread.currentThread().getName()
+					+ ": MOST_FREQ_TASK COMPLETED");
+			return null;
+		};
+
+		// Producer Thread
+		ExecutorService executorService = Executors.newCachedThreadPool();
+		executorService.submit(producerTask);
+
+		// Consumer Thread
+		int logicalCore = Runtime.getRuntime().availableProcessors();
+		List<Future<Void>> consumers = new ArrayList<>();
+		int i = 0;
+		while (i < logicalCore) {
+			Future<Void> future = executorService.submit(consumerTask);
+			consumers.add(future);
+			i++;
+		}
+
+		Future<Void> mostUsedWords = executorService
+				.submit(getTenMostFrequentlyUsedWords);
+
+		// waiting for consumers to complete
+		for (Future<Void> consumer : consumers) {
+
+			try {
+				consumer.get();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+		// Adding The dummy Map to notify completion of consumers
+		Map<String, Integer> dummyMap = new HashMap<>();
+		dummyMap.put(dummyFile, null);
+		System.out.println(Thread.currentThread().getName()
+				+ ": Added dummy File to blockingQueue2");
+		blockingQueue2.add(dummyMap);
+
+		// The adder Thread
+
+		try {
+			mostUsedWords.get();
+		} catch (InterruptedException | ExecutionException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
+		System.out.println("blockingQueue2: " + blockingQueue2.size());
+		// blockingQueue2.forEach(m -> m.keySet());
+		System.out.println("Shutting Executors");
+		try {
+			executorService.shutdown();
+			if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
+				System.out.println("shutting Down Now");
+				executorService.shutdownNow();
+				System.out.println("Pool shutdown");
+			} else {
+				System.out.println("Pool shutdown");
+			}
+
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
+	private static Callable<Void> getConsumerTaskCh10Q11(
+			BlockingQueue<Path> blockingQueue,
+			BlockingQueue<Map<String, Integer>> blockingQueue2, String dummyFile) {
+
+		// Consumer
+		AtomicBoolean finished = new AtomicBoolean(true);
+
+		Callable<Void> consumerTask = () -> {
+			System.out.println(Thread.currentThread().getName()
+					+ ": CONSUMER Started ...");
+
+			while (finished.get()) {
+
+				Path path = null;
+				// Handling the exit of threads
+				synchronized (finished) {
+
+					if (finished.get()) {
+
+						path = blockingQueue.take();
+
+						File file = path.toFile();
+						if (file.getName().equals(dummyFile)) {
+							finished.set(false);
+
+							System.out.println(Thread.currentThread().getName()
+									+ ": CONSUMER found the dummy file ("
+									+ dummyFile + ") and is exiting now");
+
+							break; // This thread has found the dummy file and
+									// should not do any processing and exit and
+									// mark itself as completed
+						}
+
+					} else {
+						// the dummy file has been found by another thread and
+						// hence this thread should exit; marked as completed
+
+						System.out.println(Thread.currentThread().getName()
+								+ ": CONSUMER exiting  because dummy file ("
+								+ dummyFile
+								+ " ) has been found by another thread");
+
+						break;
+					}
+				}
+
+				try (Stream<String> lines = Files.lines(path);) {
+					Map<String, Integer> wordFrequency = new HashMap<>();
+					String[] words = lines.flatMap(
+							line -> Stream.of(line.split("\\s"))).toArray(
+							size -> new String[size]);
+					for (String w : words) {
+						wordFrequency.merge(w, 1, (x, y) -> x + y);
+					}
+					/*
+					 * System.out.println(Thread.currentThread().getName() +
+					 * ": Path = " + path);
+					 */
+					blockingQueue2.put(wordFrequency);
+
+				} catch (Exception exception) {
+					// Expected Error due to different file types
+
+					if (!(exception.getCause() instanceof MalformedInputException)) {
+						exception.printStackTrace();
+					}
+
+				}
+
+			}
+
+			System.out.println(Thread.currentThread().getName()
+					+ ": CONSUMER COMPLETED!!!");
+			return null;
+		};
+		return consumerTask;
+	}
+
+	private static void ch10q10() {
 		BlockingQueue<Path> blockingQueue = new LinkedBlockingQueue(1000);
 		Path directory = Paths.get("/home/ramin/GitViewstore");
-		String dummyFile = "dummyFile";
+		String dummyFile = getDummyFileName().toString();
 		String word = "git";
-		
-		
+
+		Callable<Void> producerTask = getProducerCh10Q10(blockingQueue,
+				dummyFile, directory);
+
+		Callable<Void> consumerTask = getConsumerTaskch10Q10(blockingQueue,
+				dummyFile, word);
+
+		// Producer Thread
+		ExecutorService executorService = Executors.newCachedThreadPool();
+		executorService.submit(producerTask);
+
+		// Consumer Thread
+		int logicalCore = Runtime.getRuntime().availableProcessors();
+		List<Future<Void>> consumers = new ArrayList<Future<Void>>();
+		int i = 0;
+		while (i < logicalCore) {
+			Future<Void> future = executorService.submit(consumerTask);
+			consumers.add(future);
+			i++;
+		}
+
+		try {
+			executorService.shutdown();
+			if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
+				System.out.println("shutting Down Now");
+				executorService.shutdownNow();
+				System.out.println("Pool shutdown");
+			} else {
+				System.out.println("Pool shutdown");
+			}
+
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
+	private static Callable<Void> getProducerCh10Q10(
+			BlockingQueue<Path> blockingQueue, String dummyFile, Path directory) {
 		Callable<Void> producerTask = () -> {
+			System.out.println(Thread.currentThread().getName()
+					+ ": PRODUCER Started ...");
 			try (Stream<Path> stream = Files.list(directory);) {
 				List<Path> paths = stream.collect(Collectors.toList());
 
@@ -125,102 +507,91 @@ public final class root extends Applet {
 						paths.addAll(subDirectoryPath);
 
 					} else {
-						//System.out.println(Thread.currentThread().getName() + "Producer Putting = " + path);
+						// System.out.println(Thread.currentThread().getName() +
+						// "Producer Putting = " + path);
 						blockingQueue.put(path);
-						
+
 					}
 					i++;
 				}
+				System.out.println(Thread.currentThread().getName()
+						+ ": PRODUCER adding dummyFile (" + dummyFile
+						+ ") to Queue");
 				blockingQueue.put(Paths.get(dummyFile));
-				return null;
 
 			} catch (Exception exception) {
 				exception.printStackTrace();
 			}
+			System.out.println(Thread.currentThread().getName()
+					+ ": PRODUCER has COMPLETED!!!");
 			return null;
 		};
+		return producerTask;
+	}
 
-		AtomicBoolean finished = new AtomicBoolean(true);
+	private static Callable<Void> getConsumerTaskch10Q10(
+			BlockingQueue<Path> blockingQueue, String dummyFile, String word) {
 		// Consumer
+		AtomicBoolean finished = new AtomicBoolean(true);
 		Callable<Void> consumerTask = () -> {
-
+			System.out.println(Thread.currentThread().getName()
+					+ ": CONSUMER Started ...");
 			while (finished.get()) {
-				
-				Path path = blockingQueue.take();
-				//System.out.println(Thread.currentThread().getName() + ": Consumer Taking = " + finished.get() + " " + path);
-				File file = path.toFile();
-				if (file.getName().equals(dummyFile)) {
-					finished.set(false);
-					System.out.println("CONSUMER COMPLETED !!!!");
-					break;
-					
-				}
-				
+				Path path = null;
 
-				try(Stream<String> lines = Files.lines(path);)
-				{
-					boolean found = lines.anyMatch(s -> s.contains(word));
-					if(found)
-					{
-						System.out.println(Thread.currentThread().getName() +  ": Consumer Match Found = " + finished.get() + " " + path);
+				synchronized (finished) {
+					if (finished.get()) {
+						path = blockingQueue.take();
+						File file = path.toFile();
+						if (file.getName().equals(dummyFile)) {
+							finished.set(false);
+							System.out.println(Thread.currentThread().getName()
+									+ ": CONSUMER found the dummy file ("
+									+ dummyFile + ") and is exiting now");
+							break;
+						}
+
+					} else {
+						System.out.println(Thread.currentThread().getName()
+								+ ": CONSUMER exiting  because dummy file ("
+								+ dummyFile
+								+ ") has been found by another thread");
+						break;
 					}
-					
+
 				}
-				catch(Exception exception)
-				{
-					//Expected Error duw to different file types
-					if(!(exception.getCause() instanceof MalformedInputException))
-					{
+
+				try (Stream<String> lines = Files.lines(path);) {
+					boolean found = lines.anyMatch(s -> s.contains(word));
+					if (found) {
+						System.out.println(Thread.currentThread().getName()
+								+ ": CONSUMER Match Found = " + finished.get()
+								+ " " + path);
+					}
+
+				} catch (Exception exception) {
+					// Expected Error due to different file types
+					if (!(exception.getCause() instanceof MalformedInputException)) {
 						exception.printStackTrace();
 					}
-				
-				}
-				//System.out.println(Thread.currentThread().getName() + ": Consumer Finished = " + finished.get() + " " + path);
 
+				}
 			}
+			System.out.println(Thread.currentThread().getName()
+					+ ": CONSUMER COMPLETED!!!");
 			return null;
 		};
-
-		//Producer Thread
-		ExecutorService executorService = Executors.newCachedThreadPool();
-		executorService.submit(producerTask);
-
-		
-		//Consumer Thread
-		int logicalCore = Runtime.getRuntime().availableProcessors();
-		List<Future<Void>> consumers = new ArrayList<Future<Void>>();
-		int i = 0;
-		while(i < logicalCore)
-		{
-			Future<Void> future = executorService.submit(consumerTask);
-			consumers.add(future);
-			i++;
-		}
-		
-		try {
-			executorService.shutdown();
-			if(!executorService.awaitTermination(60, TimeUnit.SECONDS))
-			{
-				System.out.println("shutting Down Now");
-				executorService.shutdownNow();
-				System.out.println("Pool shutdown");
-			}
-			if(!executorService.awaitTermination(60, TimeUnit.SECONDS))
-			{
-				System.err.println("Pool did not terminate");
-			}
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-
+		return consumerTask;
 	}
 
 	/**
-	 * Find all files in directories and sub directories via collection
+	 * Find all files in directories and sub directories via stream
 	 */
-	private static void ch10q10a() {
+	@Fork(value = 1, warmups = 2)
+	@Benchmark
+	@BenchmarkMode(Mode.AverageTime)
+	@OutputTimeUnit(TimeUnit.SECONDS)
+	public static void ch10q10a() {
 		Path directory = Paths.get("/home/ramin/GitViewstore");
 
 		List<Path> paths = null;
@@ -267,7 +638,11 @@ public final class root extends Applet {
 	/**
 	 * Find all files in directories and sub directories via collection
 	 */
-	private static void ch10q10b() {
+	@Fork(value = 1, warmups = 2)
+	@Benchmark
+	@BenchmarkMode(Mode.AverageTime)
+	@OutputTimeUnit(TimeUnit.SECONDS)
+	public static void ch10q10b() {
 		Path directory = Paths.get("/home/ramin/GitViewstore");
 
 		try (Stream<Path> stream = Files.list(directory);) {
