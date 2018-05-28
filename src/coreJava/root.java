@@ -1,6 +1,5 @@
 package coreJava;
 
-import java.applet.Applet;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
@@ -18,9 +17,10 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.io.Reader;
 import java.io.StringWriter;
 import java.math.BigInteger;
+import java.net.MalformedURLException;
+import java.net.PasswordAuthentication;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -63,9 +63,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ForkJoinTask;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -93,14 +94,612 @@ import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
-import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.State;
+
+import java.util.concurrent.CompletionException;
 
 public class root {
 
 	public static void main(String args[]) throws Exception {
 		// org.openjdk.jmh.Main.main(args);
-		ch10q12();
+		long start = System.currentTimeMillis();
+		ch10q25();
+		long end = System.currentTimeMillis();
+		System.out.println("Time = " + Math.subtractExact(end, start) + "ms");
+
+	}
+
+	public static void ch10q25()
+	{
+		Supplier<PasswordAuthentication> getPassword = () -> {
+			System.out.println(Thread.currentThread().getName() + ": getPassword Started ...");
+						 
+			String userName = null;
+			String password = null;
+
+			BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+			try 
+			{
+				System.out.print("Enter your name: ");	
+				userName = reader.readLine();
+				System.out.print("Enter your password: ");	
+				password = reader.readLine();
+				
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+
+				e.printStackTrace();
+				
+			}
+			finally
+			{
+				
+			}
+
+			PasswordAuthentication passwordAuthentication = new PasswordAuthentication(userName, password.toCharArray());
+			return passwordAuthentication;
+		};
+		
+		Predicate<PasswordAuthentication> predicate = (pa) -> {
+			System.out.println(Thread.currentThread().getName() + ": predicate Started ...");
+			return new String(pa.getPassword()).equals("secret");
+		};
+		
+		boolean repeat = false;
+		while(!repeat)
+		{
+			try {
+				repeat = CompletableFuture.supplyAsync(getPassword).thenApply(passwordAuth -> predicate.test(passwordAuth)).get();
+				System.out.println("repeat=" + repeat);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+	}
+	
+	public static void ch10q24() {
+		try {
+			URL url = new URL(
+					"file:///home/ramin/GitViewstore/RD_wiki/Java/Java.html");
+			Runnable task = () -> {
+				BufferedReader in;
+				try {
+					in = new BufferedReader(new InputStreamReader(
+							url.openStream()));
+					in.lines().forEach(line -> {
+						Pattern pattern = Pattern.compile("<a.*/a>");
+						Matcher matcher = pattern.matcher(line);
+						while (matcher.find()) {
+							System.out.println(matcher.group());
+						}
+
+					});
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+			};
+			CompletableFuture<Void> completableFuture = CompletableFuture
+					.runAsync(task);
+			ForkJoinPool.commonPool().awaitQuiescence(10, TimeUnit.SECONDS);
+			
+
+		} catch (MalformedURLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	static Object lock = new Object();
+
+	public static void ch10q23() {
+
+		Callable<Void> task = () -> {
+			synchronized (lock) {
+
+				// lock = new Object();
+				System.out.println(Thread.currentThread().getName()
+						+ ": Started");
+				try {
+					Thread.sleep(3000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				System.out.println(Thread.currentThread().getName()
+						+ ": End Sleeping");
+			}
+			return null;
+
+		};
+
+		ExecutorService executors = Executors.newCachedThreadPool();
+		List<Callable<Void>> tasks = new ArrayList<>();
+		tasks.add(task);
+		tasks.add(task);
+		try {
+			executors.invokeAll(tasks);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		executors.shutdown();
+		System.out.println("Executors: shutdown");
+	}
+
+	public static void ch10q18() {
+		Path directory = Paths.get("/home/ramin/GitViewstore");
+		List<Path> files = new ArrayList<Path>();
+
+		// Finding all files in a directory
+		try (Stream<Path> stream = Files.list(directory);) {
+			List<Path> paths = stream.collect(Collectors.toList());
+
+			int index = 0;
+			while (index < paths.size()) {
+				Path path = paths.get(index);
+				File file = path.toFile();
+				if (file.isDirectory()) {
+					List<Path> subDirectory = Files.list(path).collect(
+							Collectors.toList());
+					paths.addAll(subDirectory);
+				} else {
+					files.add(path);
+				}
+				index++;
+			}
+		} catch (IOException exception) {
+			exception.printStackTrace();
+		}
+
+		// Creating a CompletableFuture task for each File
+		List<CompletableFuture<Void>> tasks = new ArrayList<>();
+
+		LongAdder longAdder = new LongAdder();
+
+		for (Path file : files) {
+			Runnable runnable = () -> {
+				try (Stream<String> lines = Files.lines(file);) {
+
+					long count = lines.flatMap(line -> {
+						return Stream.of(line.split("\\s"));
+					}).count();
+
+					longAdder.add(count);
+
+				} catch (Exception exception) {
+					if (!(exception.getCause() instanceof MalformedInputException)) {
+						exception.printStackTrace();
+					}
+				}
+
+			};
+			CompletableFuture<Void> completableFuture = CompletableFuture
+					.runAsync(runnable);
+			tasks.add(completableFuture);
+		}
+		CompletableFuture<Void> barrier = CompletableFuture.allOf(tasks
+				.toArray(new CompletableFuture[tasks.size()]));
+		barrier.join();
+
+		System.out.println("counterCh10Q18 = " + longAdder.sum());
+	}
+
+	static long counterCh10Q17 = 0;
+
+	public static void ch10q17() {
+		Path directory = Paths.get("/home/ramin/GitViewstore");
+		List<Path> files = new ArrayList<Path>();
+
+		// Finding all files in a directory
+		try (Stream<Path> stream = Files.list(directory);) {
+			List<Path> paths = stream.collect(Collectors.toList());
+
+			int index = 0;
+			while (index < paths.size()) {
+				Path path = paths.get(index);
+				File file = path.toFile();
+				if (file.isDirectory()) {
+					List<Path> subDirectory = Files.list(path).collect(
+							Collectors.toList());
+					paths.addAll(subDirectory);
+				} else {
+					files.add(path);
+				}
+				index++;
+			}
+		} catch (IOException exception) {
+			exception.printStackTrace();
+		}
+
+		// Creating a CompletableFuture task for each File
+		List<CompletableFuture<Void>> tasks = new ArrayList<>();
+		Object lock = new Object();
+		for (Path file : files) {
+			Runnable runnable = () -> {
+				try (Stream<String> lines = Files.lines(file);) {
+
+					long count = lines.flatMap(line -> {
+						return Stream.of(line.split("\\s"));
+					}).count();
+					synchronized (lock) {
+
+						counterCh10Q17 = counterCh10Q17 + count;
+					}
+				} catch (Exception exception) {
+					if (!(exception.getCause() instanceof MalformedInputException)) {
+						exception.printStackTrace();
+					}
+				}
+
+			};
+			CompletableFuture<Void> completableFuture = CompletableFuture
+					.runAsync(runnable);
+			tasks.add(completableFuture);
+		}
+		CompletableFuture<Void> barrier = CompletableFuture.allOf(tasks
+				.toArray(new CompletableFuture[tasks.size()]));
+		barrier.join();
+
+		System.out.println("counterCh10Q17 = " + counterCh10Q17);
+	}
+
+	static long counterCh10Q16 = 0;
+
+	public static void ch10q16() {
+		Path directory = Paths.get("/home/ramin/GitViewstore");
+		List<Path> files = new ArrayList<Path>();
+
+		// Finding all files in a directory
+		try (Stream<Path> stream = Files.list(directory);) {
+			List<Path> paths = stream.collect(Collectors.toList());
+
+			int index = 0;
+			while (index < paths.size()) {
+				Path path = paths.get(index);
+				File file = path.toFile();
+				if (file.isDirectory()) {
+					List<Path> subDirectory = Files.list(path).collect(
+							Collectors.toList());
+					paths.addAll(subDirectory);
+				} else {
+					files.add(path);
+				}
+				index++;
+			}
+		} catch (IOException exception) {
+			exception.printStackTrace();
+		}
+
+		// Creating a CompletableFuture task for each File
+		List<CompletableFuture<Void>> tasks = new ArrayList<>();
+		Object lock = new Object();
+		for (Path file : files) {
+			Runnable runnable = () -> {
+				try (Stream<String> lines = Files.lines(file);) {
+
+					long count = lines.flatMap(line -> {
+						return Stream.of(line.split("\\s"));
+					}).count();
+					counterCh10Q16 = counterCh10Q16 + count;
+
+				} catch (Exception exception) {
+					if (!(exception.getCause() instanceof MalformedInputException)) {
+						exception.printStackTrace();
+					}
+				}
+
+			};
+			CompletableFuture<Void> completableFuture = CompletableFuture
+					.runAsync(runnable);
+			tasks.add(completableFuture);
+		}
+		CompletableFuture<Void> barrier = CompletableFuture.allOf(tasks
+				.toArray(new CompletableFuture[tasks.size()]));
+		barrier.join();
+
+		System.out.println("counterCh10Q16 = " + counterCh10Q16);
+	}
+
+	public static void ch10q15() {
+		// Get all files
+		Path directory = Paths.get("/home/ramin/GitViewstore");
+		List<Path> files = new ArrayList<Path>();
+		try {
+			List<Path> paths = Files.list(directory).collect(
+					Collectors.toCollection(LinkedList::new));
+			int index = 0;
+			while (index < paths.size()) {
+				Path path = paths.get(index);
+				File file = path.toFile();
+				if (file.isDirectory()) {
+					List<Path> subDirectory = Files.list(path).collect(
+							Collectors.toCollection(LinkedList::new));
+					paths.addAll(subDirectory);
+
+				} else {
+					files.add(path);
+				}
+				index++;
+
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		Map<String, Integer> concurrentHashMap = new ConcurrentHashMap<>();
+		List<Callable<Void>> tasks = files
+				.stream()
+				.map(path -> {
+
+					Callable<Void> task = () -> {
+						// System.out.println(Thread.currentThread().getName()
+						// + ": Started ...");
+						try (Stream<String> lines = Files.lines(path)
+								.parallel();) {
+							Stream<String> words = lines.flatMap(line -> {
+								return Stream.of(line.split("\\s"));
+							});
+							words.forEach(word -> {
+								concurrentHashMap.merge(word, 1, (x, y) -> x
+										+ y);
+							});
+						} catch (Exception exception) {
+							if (!(exception.getCause() instanceof MalformedInputException)) {
+								exception.printStackTrace();
+							}
+
+						}
+						/*
+						 * System.out.println(Thread.currentThread().getName() +
+						 * ": COMPLETED!!!");
+						 */
+						return null;
+					};
+					return task;
+				}).collect(Collectors.toList());
+
+		ExecutorService executorService = Executors.newCachedThreadPool();
+		try {
+			executorService.invokeAll(tasks);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		// Sorting
+		Comparator<Entry<String, Integer>> comparator = ((e1, e2) -> {
+			if (e1.getValue() < e2.getValue()) {
+				return 1;
+			}
+
+			if (e1.getValue() == e2.getValue()) {
+				return 0;
+			}
+
+			return -1;
+		});
+
+		List<Entry<String, Integer>> list = concurrentHashMap.entrySet()
+				.parallelStream().sorted(comparator)
+				.collect(Collectors.toList());
+
+		// Printing only the 10 most used words
+		list.subList(0, 10).forEach(
+				entry -> {
+					System.out.println("(" + entry.getKey() + ", "
+							+ entry.getValue() + ")");
+				});
+
+		executorService.shutdown();
+		System.out.println("executorService has been shutdown successfully.");
+
+	}
+
+	public static void ch10q14() {
+		// Get all files
+		Path directory = Paths.get("/home/ramin/GitViewstore");
+		List<Path> files = new ArrayList<Path>();
+		try {
+			List<Path> paths = Files.list(directory).collect(
+					Collectors.toCollection(LinkedList::new));
+			int index = 0;
+			while (index < paths.size()) {
+				Path path = paths.get(index);
+				File file = path.toFile();
+				if (file.isDirectory()) {
+					List<Path> subDirectory = Files.list(path).collect(
+							Collectors.toCollection(LinkedList::new));
+					paths.addAll(subDirectory);
+
+				} else {
+					files.add(path);
+				}
+				index++;
+
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		Map<String, Integer> concurrentHashMap = new ConcurrentHashMap<>();
+		List<Callable<Void>> tasks = files
+				.stream()
+				.map(path -> {
+
+					Callable<Void> task = () -> {
+						System.out.println(Thread.currentThread().getName()
+								+ ": Started ...");
+						try (Stream<String> lines = Files.lines(path);) {
+							Stream<String> words = lines.flatMap(line -> {
+								return Stream.of(line.split("\\s"));
+							});
+							words.forEach(word -> {
+								concurrentHashMap.merge(word, 1, (x, y) -> x
+										+ y);
+							});
+						} catch (Exception exception) {
+							if (!(exception.getCause() instanceof MalformedInputException)) {
+								exception.printStackTrace();
+							}
+
+						}
+						System.out.println(Thread.currentThread().getName()
+								+ ": COMPLETED!!!");
+						return null;
+					};
+					return task;
+				}).collect(Collectors.toList());
+
+		ExecutorService executorService = Executors.newCachedThreadPool();
+		try {
+			executorService.invokeAll(tasks);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		// Sorting
+		List<Entry<String, Integer>> list = new ArrayList<>(
+				concurrentHashMap.entrySet());
+		Comparator<Entry<String, Integer>> comparator = ((e1, e2) -> {
+			if (e1.getValue() < e2.getValue()) {
+				return 1;
+			}
+
+			if (e1.getValue() == e2.getValue()) {
+				return 0;
+			}
+
+			return -1;
+		});
+		Collections.sort(list, comparator);
+
+		// Printing only the 10 most used words
+		list.subList(0, 10).forEach(
+				entry -> {
+					System.out.println("(" + entry.getKey() + ", "
+							+ entry.getValue() + ")");
+				});
+
+		executorService.shutdown();
+		System.out.println("executorService has been shutdown successfully.");
+
+	}
+
+	public static void ch10q13() {
+		// Get all files
+		Path directory = Paths.get("/home/ramin/GitViewstore");
+		List<Path> files = new ArrayList<Path>();
+		try {
+			List<Path> paths = Files.list(directory).collect(
+					Collectors.toCollection(LinkedList::new));
+			int index = 0;
+			while (index < paths.size()) {
+				Path path = paths.get(index);
+				File file = path.toFile();
+				if (file.isDirectory()) {
+					List<Path> subDirectory = Files.list(path).collect(
+							Collectors.toCollection(LinkedList::new));
+					paths.addAll(subDirectory);
+
+				} else {
+					files.add(path);
+				}
+				index++;
+
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		List<Callable<Map<String, Integer>>> tasks = files
+				.stream()
+				.map(path -> {
+
+					Callable<Map<String, Integer>> task = () -> {
+						System.out.println(Thread.currentThread().getName()
+								+ ": Started ...");
+						Map<String, Integer> frequency = new HashMap();
+						try (Stream<String> lines = Files.lines(path);) {
+							Stream<String> words = lines.flatMap(line -> {
+								return Stream.of(line.split("\\s"));
+							});
+							words.forEach(word -> {
+								frequency.merge(word, 1, (x, y) -> x + y);
+							});
+						} catch (Exception exception) {
+							if (!(exception.getCause() instanceof MalformedInputException)) {
+								exception.printStackTrace();
+							}
+
+						}
+						System.out.println(Thread.currentThread().getName()
+								+ ": COMPLETED!!!");
+						return frequency;
+					};
+					return task;
+				}).collect(Collectors.toList());
+
+		ExecutorService executorService = Executors.newCachedThreadPool();
+		ExecutorCompletionService<Map<String, Integer>> ecs = new ExecutorCompletionService<>(
+				executorService);
+		for (Callable<Map<String, Integer>> task : tasks) {
+			ecs.submit(task);
+		}
+
+		Map<String, Integer> finalWordFrequency = new HashMap<>();
+		int size = tasks.size();
+		int i = 0;
+		while (i < size) {
+			// Merging
+
+			try {
+				Map<String, Integer> fileWordFrequency = ecs.take().get();
+				fileWordFrequency.forEach((key, value) -> {
+					finalWordFrequency.merge(key, value, (x, y) -> x + y);
+				});
+
+			} catch (InterruptedException | ExecutionException e) {
+				e.printStackTrace();
+			}
+			i++;
+		}
+
+		// Sorting
+		List<Entry<String, Integer>> list = new ArrayList<>(
+				finalWordFrequency.entrySet());
+		Comparator<Entry<String, Integer>> comparator = ((e1, e2) -> {
+			if (e1.getValue() < e2.getValue()) {
+				return 1;
+			}
+
+			if (e1.getValue() == e2.getValue()) {
+				return 0;
+			}
+
+			return -1;
+		});
+		Collections.sort(list, comparator);
+
+		// Printing only the 10 most used words
+		list.subList(0, 10).forEach(
+				entry -> {
+					System.out.println("(" + entry.getKey() + ", "
+							+ entry.getValue() + ")");
+				});
+
+		executorService.shutdown();
+		System.out.println("executorService has been shutdown successfully.");
+
 	}
 
 	public static void ch10q12() {
@@ -130,31 +729,29 @@ public class root {
 			e.printStackTrace();
 		}
 
-		List<Callable<Map<String, Integer>>> tasks = files.stream()
+		List<Callable<Map<String, Integer>>> tasks = files
+				.stream()
 				.map(path -> {
 
-					Callable<Map<String, Integer>> task = () -> 
-					{
-						System.out.println(Thread.currentThread().getName() + ": Started ...");
+					Callable<Map<String, Integer>> task = () -> {
+						System.out.println(Thread.currentThread().getName()
+								+ ": Started ...");
 						Map<String, Integer> frequency = new HashMap();
-						try(Stream<String> lines = Files.lines(path);)
-						{
+						try (Stream<String> lines = Files.lines(path);) {
 							Stream<String> words = lines.flatMap(line -> {
 								return Stream.of(line.split("\\s"));
 							});
 							words.forEach(word -> {
-								frequency.merge(word, 1, (x,y) -> x+y);
+								frequency.merge(word, 1, (x, y) -> x + y);
 							});
-						}
-						catch(Exception exception)
-						{
-							if(!(exception.getCause() instanceof MalformedInputException))
-							{
+						} catch (Exception exception) {
+							if (!(exception.getCause() instanceof MalformedInputException)) {
 								exception.printStackTrace();
 							}
-							
+
 						}
-						System.out.println(Thread.currentThread().getName() + ": COMPLETED!!!");
+						System.out.println(Thread.currentThread().getName()
+								+ ": COMPLETED!!!");
 						return frequency;
 					};
 					return task;
@@ -164,17 +761,16 @@ public class root {
 		try {
 			List<Future<Map<String, Integer>>> futures = executorService
 					.invokeAll(tasks);
-			//Merging
+			// Merging
 			Map<String, Integer> finalWordFrequency = new HashMap<>();
-			for (Future<Map<String, Integer>> future : futures) 
-			{
+			for (Future<Map<String, Integer>> future : futures) {
 				Map<String, Integer> fileWordFrequency = future.get();
 				fileWordFrequency.forEach((key, value) -> {
 					finalWordFrequency.merge(key, value, (x, y) -> x + y);
 				});
 			}
-			
-			//Sorting 
+
+			// Sorting
 			List<Entry<String, Integer>> list = new ArrayList<>(
 					finalWordFrequency.entrySet());
 			Comparator<Entry<String, Integer>> comparator = ((e1, e2) -> {
@@ -189,12 +785,13 @@ public class root {
 				return -1;
 			});
 			Collections.sort(list, comparator);
-			
-			//Printing only the 10 most used words
-			list.subList(0, 10).forEach(entry -> {
-				System.out.println("(" + entry.getKey() + ", " + entry.getValue()
-						+ ")");
-			});
+
+			// Printing only the 10 most used words
+			list.subList(0, 10).forEach(
+					entry -> {
+						System.out.println("(" + entry.getKey() + ", "
+								+ entry.getValue() + ")");
+					});
 
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
@@ -203,7 +800,7 @@ public class root {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 		executorService.shutdown();
 		System.out.println("executorService has been shutdown successfully.");
 
