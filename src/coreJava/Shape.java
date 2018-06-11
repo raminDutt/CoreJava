@@ -34,7 +34,6 @@ public abstract class Shape<T> implements Cloneable{
 			shape = (Shape)cl.newInstance(); 
 			shape.center = new Point(this.getCenter().getX(), this.getCenter().getY());
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	

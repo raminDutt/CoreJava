@@ -6,6 +6,8 @@ import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -15,9 +17,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.ObjectStreamException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
@@ -95,72 +101,201 @@ import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 
-import java.util.concurrent.CompletionException;
+import annotationProcessor.JavaDocProcessor.Param;
+import annotationProcessor.JavaDocProcessor.Return;
+import annotationProcessor.Todo;
 
 public class root {
+	
 
 	public static void main(String args[]) throws Exception {
 		// org.openjdk.jmh.Main.main(args);
-		long start = System.currentTimeMillis();
-		ch10q25();
-		long end = System.currentTimeMillis();
-		System.out.println("Time = " + Math.subtractExact(end, start) + "ms");
+		//ch11q3();
+		
+		binarySearch();
+		
+		Employee employee = new Employee();
+		Manager manager = new Manager();
+		List<Employee> employees = new ArrayList<Employee>();
+		employees.add(manager);
+		List<? extends Employee> employees2 = employees;
+		List<?> list = employees;
+		
+		List<Manager> managers = new ArrayList<Manager>();
+		//employees = managers;
 
 	}
-
-	public static void ch10q25()
+	
+	@Param(name="array", description="Array")
+	@Param(name="a", description="Root description of A")
+	@Return(description="ReturnDescription_4")
+	public static <A extends Employee>void f(ArrayList<A> array, A a) // same as public static <T extends Employee> void f(ArrayList<T> array)
 	{
-		Supplier<PasswordAuthentication> getPassword = () -> {
-			System.out.println(Thread.currentThread().getName() + ": getPassword Started ...");
-						 
-			String userName = null;
-			String password = null;
-
-			BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-			try 
-			{
-				System.out.print("Enter your name: ");	
-				userName = reader.readLine();
-				System.out.print("Enter your password: ");	
-				password = reader.readLine();
-				
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-
-				e.printStackTrace();
-				
-			}
-			finally
-			{
-				
-			}
-
-			PasswordAuthentication passwordAuthentication = new PasswordAuthentication(userName, password.toCharArray());
-			return passwordAuthentication;
-		};
-		
-		Predicate<PasswordAuthentication> predicate = (pa) -> {
-			System.out.println(Thread.currentThread().getName() + ": predicate Started ...");
-			return new String(pa.getPassword()).equals("secret");
-		};
-		
-		boolean repeat = false;
-		while(!repeat)
+		A e = array.get(0); //OK
+		//ArrayList<Employee> x = array; //compile error because ArrayList/ generics are not covariant
+		array.add(a); //compile error 
+		//array.add(new Manager()); //compile error  
+	}
+	
+	@Todo(message="Reminder message 7", description="root class, Methode: binarySearch")
+	public static void binarySearch()
+	{
+		Random random = new Random();
+		int[] array = random.ints(100, 0, 100).toArray();
+		Arrays.sort(array);
+		System.out.println(Arrays.toString(array));
+		int j = 0;
+		while(j < array.length)
 		{
-			try {
-				repeat = CompletableFuture.supplyAsync(getPassword).thenApply(passwordAuth -> predicate.test(passwordAuth)).get();
-				System.out.println("repeat=" + repeat);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (ExecutionException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			System.out.println(j + "=" + array[j]);
+			j++;
+		}
+		
+		int target = random.nextInt(100);
+		System.out.println("target = " + target);
+		int min = 0;
+		int max = array.length-1;
+		boolean flag = true;
+		int guess = -1;
+		while(flag)
+		{
+			guess = (min+max)/2;
+			if(array[guess] == target)
+			{
+				flag = false;
+			}
+			else
+			{
+				if(array[guess] < target)
+				{
+					min=min+1;
+				}
+				else
+				{
+					max = max-1;
+				}
+				
+				if(min > max)
+				{
+					flag = false;
+					guess=-1;
+				}
 			}
 		}
 		
+		System.out.println("Index = " + guess);
+		
+	}
+
+	public static void ch11q3() {
+		//You cannot have the constructor of an object calling itself again. That will give a compiler error. 
+		Item item = new Item();
+		Point north = new Point(50,520);
+		item.from.cyclic = north;
+		Path path = Paths.get("/home/ramin/workspace/ch11/ch11Q2.ser");
+
+		//Serializing an object
+		DataOutputStreamCh11Q2 ch11q2 = new DataOutputStreamCh11Q2(path);
+		ch11q2.writeObject(item);
+
+		
+		//Deserializing an object
+		Item item2 = (Item)ch11q2.readObject();
+		System.out.println(item2);
+		
+
+	}
+	public static void ch11q2() {
+
+		Item item = new Item();
+		Path path = Paths.get("/home/ramin/workspace/ch11/ch11Q2.ser");
+
+		//Serializing an object
+		DataOutputStreamCh11Q2 ch11q2 = new DataOutputStreamCh11Q2(path);
+		ch11q2.writeObject(item);
+		
+		//Deserializing an object
+		Item item2 = (Item)ch11q2.readObject();
+		System.out.println(item2);
+		
+
 	}
 	
+
+
+	public Object ch11Q1() throws CloneNotSupportedException {
+		Class<Object> object = Object.class;
+		Class<Cloneable2> annotationClass = Cloneable2.class;
+
+		if (object.isAnnotationPresent(annotationClass)) {
+			Annotation annotation = (Annotation) object
+					.getAnnotation(annotationClass);
+			// Continue with cloning
+		} else {
+			throw new CloneNotSupportedException();
+		}
+
+		return new Object();
+	}
+
+	private Object readResolve() throws ObjectStreamException {
+		return null;
+	}
+
+	public static void ch10q25() {
+		Supplier<PasswordAuthentication> getPassword = () -> {
+			System.out.println(Thread.currentThread().getName()
+					+ ": getPassword Started ...");
+
+			String userName = null;
+			String password = null;
+
+			BufferedReader reader = new BufferedReader(new InputStreamReader(
+					System.in));
+			try {
+				System.out.print("Enter your name: ");
+				userName = reader.readLine();
+				System.out.print("Enter your password: ");
+				password = reader.readLine();
+
+			} catch (IOException e) {
+
+				e.printStackTrace();
+
+			} finally {
+
+			}
+
+			PasswordAuthentication passwordAuthentication = new PasswordAuthentication(
+					userName, password.toCharArray());
+			return passwordAuthentication;
+		};
+
+		Predicate<PasswordAuthentication> predicate = (pa) -> {
+			System.out.println(Thread.currentThread().getName()
+					+ ": predicate Started ...");
+			return new String(pa.getPassword()).equals("secret");
+		};
+
+		boolean repeat = false;
+		while (!repeat) {
+			try {
+				repeat = CompletableFuture
+						.supplyAsync(getPassword)
+						.thenApply(passwordAuth -> predicate.test(passwordAuth))
+						.get();
+				System.out.println("repeat=" + repeat);
+			} catch (InterruptedException e) {
+
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+
+				e.printStackTrace();
+			}
+		}
+
+	}
+
 	public static void ch10q24() {
 		try {
 			URL url = new URL(
@@ -179,7 +314,7 @@ public class root {
 
 					});
 				} catch (Exception e) {
-					// TODO Auto-generated catch block
+
 					e.printStackTrace();
 				}
 
@@ -187,13 +322,12 @@ public class root {
 			CompletableFuture<Void> completableFuture = CompletableFuture
 					.runAsync(task);
 			ForkJoinPool.commonPool().awaitQuiescence(10, TimeUnit.SECONDS);
-			
 
 		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
+
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+
 			e.printStackTrace();
 		}
 	}
@@ -211,7 +345,7 @@ public class root {
 				try {
 					Thread.sleep(3000);
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
+
 					e.printStackTrace();
 				}
 				System.out.println(Thread.currentThread().getName()
@@ -228,7 +362,7 @@ public class root {
 		try {
 			executors.invokeAll(tasks);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
+
 			e.printStackTrace();
 		}
 
@@ -433,7 +567,7 @@ public class root {
 
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+
 			e.printStackTrace();
 		}
 		Map<String, Integer> concurrentHashMap = new ConcurrentHashMap<>();
@@ -527,7 +661,7 @@ public class root {
 
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+
 			e.printStackTrace();
 		}
 		Map<String, Integer> concurrentHashMap = new ConcurrentHashMap<>();
@@ -617,7 +751,7 @@ public class root {
 
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+
 			e.printStackTrace();
 		}
 
@@ -725,7 +859,7 @@ public class root {
 
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+
 			e.printStackTrace();
 		}
 
@@ -794,10 +928,10 @@ public class root {
 					});
 
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
+
 			e.printStackTrace();
 		} catch (ExecutionException e) {
-			// TODO Auto-generated catch block
+
 			e.printStackTrace();
 		}
 
@@ -921,10 +1055,10 @@ public class root {
 			try {
 				consumer.get();
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
+
 				e.printStackTrace();
 			} catch (ExecutionException e) {
-				// TODO Auto-generated catch block
+
 				e.printStackTrace();
 			}
 		}
@@ -941,7 +1075,7 @@ public class root {
 		try {
 			mostUsedWords.get();
 		} catch (InterruptedException | ExecutionException e1) {
-			// TODO Auto-generated catch block
+
 			e1.printStackTrace();
 		}
 
@@ -959,7 +1093,7 @@ public class root {
 			}
 
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
+
 			e.printStackTrace();
 		}
 
@@ -1081,8 +1215,6 @@ public class root {
 			}
 
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 
 	}
@@ -1196,7 +1328,7 @@ public class root {
 		try {
 			paths = Files.list(directory).collect(Collectors.toList());
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+
 			e.printStackTrace();
 		}
 
@@ -1301,7 +1433,7 @@ public class root {
 			System.out.println(vector);
 			System.out.println(accumulator.get());
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
+
 			e.printStackTrace();
 		}
 		executorService.shutdown();
@@ -1338,7 +1470,7 @@ public class root {
 			executorService.shutdown();
 
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
+
 			e.printStackTrace();
 		}
 
@@ -1370,7 +1502,6 @@ public class root {
 					+ longAdder.sum());
 			executorService.shutdown();
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -1518,7 +1649,6 @@ public class root {
 				System.out.println("*******");
 				System.out.println(concurrentHashMap.get("git"));
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 
@@ -1560,7 +1690,6 @@ public class root {
 				try {
 					System.out.println(future.get());
 				} catch (Exception e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 
@@ -1606,10 +1735,8 @@ public class root {
 				Path p = executorService.invokeAny(tasks);
 				System.out.println("Result = " + p);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (ExecutionException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 
@@ -1722,11 +1849,11 @@ public class root {
 						}
 
 					}
-				} catch (Exception e) { // TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 
-				});
+			});
 
 		} catch (Exception exception) {
 			exception.printStackTrace();
@@ -1843,7 +1970,6 @@ public class root {
 					try {
 						System.out.println(completableFuture.get());
 					} catch (Exception e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}
@@ -2249,7 +2375,6 @@ public class root {
 			 * System.out.println(k + ": " + v));
 			 */
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -3060,7 +3185,6 @@ public class root {
 					.forEach(System.out::println);
 
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}

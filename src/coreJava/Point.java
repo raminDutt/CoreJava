@@ -3,16 +3,18 @@ package coreJava;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.Serializable;
 import java.util.Arrays;
-import java.util.Objects;
 
-public class Point implements Serializable, Cloneable {
+import annotationProcessor.Todo;
+
+@Serializable
+public class Point implements Cloneable {
 	double coordinate[] = new double[2];
-	private static final long serialVersionUID = 841912001828677276L;
+	private static long serialVersionUID = 841912001828677276L;
 	protected double x=0;
 	protected double y=0;
 	static public volatile int age;
+	@Transient public Point cyclic  = null;
 
 	public Point()
 	{
@@ -22,8 +24,8 @@ public class Point implements Serializable, Cloneable {
 	
 	public Point(double x, double y)
 	{
-		//this.x=x;
-		//this.y=y;
+		this.x=x;
+		this.y=y;
 		this.coordinate[0]=x;
 		this.coordinate[1]=y;
 	}
@@ -42,6 +44,7 @@ public class Point implements Serializable, Cloneable {
 		return this.coordinate[1];
 	}
 	
+	@Todo(message="Reminder message 6", description="Point class, Methode: setX")
 	public void setX(double x)
 	{
 		//this.x=x;
@@ -57,13 +60,17 @@ public class Point implements Serializable, Cloneable {
 	
 	@Override
 	public String toString()
-	{
-		StringBuilder builder = new StringBuilder();
-		/*builder.append("X = " + x + "\n");
-		builder.append("Y = " + y + "\n");*/
-		builder.append("X = " + this.coordinate[0] + "\n");
-		builder.append("Y = " + this.coordinate[1] + "\n");
-		return builder.toString();
+	{		
+		String a = "coordinate[]=" + Arrays.toString(coordinate);
+		String b = "serialVersionUID=" + serialVersionUID;
+		String c = "x=" + x;
+		String d = "y=" + y;
+		String e = "age=" + age;
+		String f = "cyclic=" + cyclic;
+		
+		String result = "("+a+" "+b+" "+c+" "+d+" "+e+" "+f+")"; 
+
+		return result;
 	}
 	
 	

@@ -1,9 +1,11 @@
 package coreJava;
 
-public class Line extends Shape{
+@Serializable
+public class Line {
 	
 	Point from;
 	Point to;
+	Point center;
 	
 	public Line()
 	{
@@ -16,7 +18,7 @@ public class Line extends Shape{
 		this.to=to;
 	}
 
-	@Override
+	//@Override
 	public Point getCenter() {
 		double cx = (to.getX()+from.getX())/2;
 		double cy = (from.getY()+from.getY())/2;
@@ -31,6 +33,12 @@ public class Line extends Shape{
 		line.from = this.from.clone();
 		line.to=this.to.clone();
 		return line;
+	}
+	
+	public String toString()
+	{
+		String result = "[from=" + to + " " + "to=" + to + " " + "center=" + center +"]";
+		return result;
 	}
 
 }
