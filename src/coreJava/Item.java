@@ -4,6 +4,8 @@ import java.util.Objects;
 
 import annotationProcessor.JavaDocProcessor.Param;
 import annotationProcessor.JavaDocProcessor.Return;
+import annotationProcessor.Resource;
+import annotationProcessor.TestCaseProcessor.TestCase;
 import annotationProcessor.Todo;
 
 @Todo(message = "Reminder message 2", description = "Item class")
@@ -22,6 +24,15 @@ public class Item {
 	private float fish = 156;
 	private double price = 4.99;
 	private char letter = 'j';
+	
+	@Resource(url="https://www.oracle.com/index.html")
+	public String url;
+	
+	@Resource(url="https://www.google.com/")
+	public String url2;
+	
+	@Resource(url="file:///media/sf_C_DRIVE/GitViewstore/RD_wiki/Java/Java.html")
+	public String url3;
 
 	public Point from = new Point(0, 0);
 	Point to = new Point(10, 20);
@@ -31,6 +42,14 @@ public class Item {
 	public Item() {
 		// description=null;
 		// price=0;
+	}
+	
+	
+	@TestCase(params="45", expected="264")
+	@TestCase(params="4", expected="24")
+	public static int ramin(int x)
+	{
+		return 0;
 	}
 
 	@Return(description = "ReturnDescription_1")

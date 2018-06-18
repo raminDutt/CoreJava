@@ -5,12 +5,19 @@
 		<groupId>training</groupId>
 		<artifactId>home</artifactId>
 		<relativePath>../home</relativePath>
-		<version>0.0.1-SNAPSHOT</version>		
+		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 	<groupId>core.java</groupId>
 	<artifactId>core.java.training</artifactId>
 
 	<dependencies>
+		<!-- Junit 4 -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.12</version>
+			<!-- <scope>test</scope>-->
+		</dependency>
 		<!-- Annotation processor -->
 		<dependency>
 			<groupId>annotation</groupId>
@@ -68,11 +75,8 @@
 				<configuration>
 					<source>1.8</source>
 					<target>1.8</target>
-<!-- 					<annotationProcessors>
-						<annotationProcessor>
-							annotationProcessor.TodoProcessor
-						</annotationProcessor>
-					</annotationProcessors> -->
+					<!-- <annotationProcessors> <annotationProcessor> annotationProcessor.TodoProcessor 
+						</annotationProcessor> </annotationProcessors> -->
 				</configuration>
 			</plugin>
 		</plugins>

@@ -6,8 +6,6 @@ import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.DataOutput;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -22,8 +20,9 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
@@ -77,6 +76,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAccumulator;
 import java.util.concurrent.atomic.LongAdder;
@@ -95,6 +95,7 @@ import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
+import org.junit.Test;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -103,125 +104,433 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 
 import annotationProcessor.JavaDocProcessor.Param;
 import annotationProcessor.JavaDocProcessor.Return;
+import annotationProcessor.Resource;
+import annotationProcessor.TestCaseEnigma;
+import annotationProcessor.TestCaseProcessor.TestCase;
 import annotationProcessor.Todo;
 
-public class root {
-	
+
+public class Root {
 
 	public static void main(String args[]) throws Exception {
-		// org.openjdk.jmh.Main.main(args);
-		//ch11q3();
-		
-		binarySearch();
-		
-		Employee employee = new Employee();
-		Manager manager = new Manager();
-		List<Employee> employees = new ArrayList<Employee>();
-		employees.add(manager);
-		List<? extends Employee> employees2 = employees;
-		List<?> list = employees;
-		
-		List<Manager> managers = new ArrayList<Manager>();
-		//employees = managers;
+
+		Item item = new Item();
+		Class<?> itemClass = item.getClass();
+
+		Todo[] todos = itemClass.getAnnotationsByType(Todo.class);
+
+		System.out.println(Arrays.toString(todos));
+
+		Annotation[] todos2 = itemClass.getAnnotations();
+		if (itemClass.isAnnotationPresent(Todo.class)
+				|| itemClass.isAnnotationPresent(Todo.Todos.class)) {
+
+		}
+		/*
+		 * for(Annotation annotation : todos2) { if(annotation instanceof
+		 * Todo.Todos) { Todo.Todos todo = (Todo.Todos) annotation; Todo[]
+		 * todos3 = todo.value(); for(Todo todo2 : todos3) {
+		 * 
+		 * System.out.println(todo2.description());
+		 * System.out.println(todo2.message()); System.out.println("****"); } }
+		 * 
+		 * }
+		 */
+
+		Todo todo = item.getClass().getAnnotation(Todo.class);
+		System.out.println(todo);
+
+		Todo todo5 = item.getClass().getDeclaredAnnotation(Todo.class);
+		System.out.println(todo5);
 
 	}
-	
-	@Param(name="array", description="Array")
-	@Param(name="a", description="Root description of A")
-	@Return(description="ReturnDescription_4")
-	public static <A extends Employee>void f(ArrayList<A> array, A a) // same as public static <T extends Employee> void f(ArrayList<T> array)
-	{
-		A e = array.get(0); //OK
-		//ArrayList<Employee> x = array; //compile error because ArrayList/ generics are not covariant
-		array.add(a); //compile error 
-		//array.add(new Manager()); //compile error  
+
+	public <T> T f(Class<T> t) {
+
+		return null;
 	}
-	
-	@Todo(message="Reminder message 7", description="root class, Methode: binarySearch")
-	public static void binarySearch()
+
+	public static void ch11Q10() {
+		Item item = new Item();
+		resourceProcessor(item);
+		System.out.println(item.url);
+		System.out.println("***************************");
+		System.out.println(item.url2);
+
+		System.out.println("+++++++++++++++++++++++++++++");
+		System.out.println(item.url);
+	}
+
+	public static void resourceProcessor(Object object) {
+
+		Class<Resource> classResource = Resource.class;
+
+		Field[] fields = object.getClass().getDeclaredFields();
+		for (Field field : fields) {
+			boolean isPresent = field.isAnnotationPresent(classResource);
+			if (isPresent) {
+				Resource resource = field.getAnnotation(classResource);
+
+				try {
+					URL url = new URL(resource.url());
+					try (InputStream inputStream = url.openStream();
+							InputStreamReader inputStreamReader = new InputStreamReader(
+									inputStream);
+							BufferedReader bufferedReader = new BufferedReader(
+									inputStreamReader)) {
+						String resourceContent = bufferedReader.lines()
+								.collect(Collectors.joining("\n"));
+						field.setAccessible(true);
+						field.set(object, resourceContent);
+
+					} catch (IOException e) {
+						e.printStackTrace();
+					} catch (IllegalArgumentException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IllegalAccessException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+
+				} catch (MalformedURLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+			}
+		}
+
+	}
+
+	public static void runEnigmaTestB(Object object) throws Exception {
+		AtomicInteger passed = new AtomicInteger();
+		LongAdder failed = new LongAdder();
+		LongAdder ignored = new LongAdder();
+
+		Class<TestCaseEnigma> testCaseEnigmaAnnotation = TestCaseEnigma.class;
+		Class<TestCaseEnigma.EningmaTestCases> enigmaTestCasesAnnotation = TestCaseEnigma.EningmaTestCases.class;
+
+		Method[] methods = object.getClass().getDeclaredMethods();
+		List<Callable<String>> tasks = Stream
+				.of(methods)
+				.parallel()
+				.filter(method -> method
+						.isAnnotationPresent(testCaseEnigmaAnnotation)
+						|| method
+								.isAnnotationPresent(enigmaTestCasesAnnotation))
+				.flatMap(
+						method -> {
+							List<Callable<String>> callableTests = new ArrayList<>();
+
+							TestCaseEnigma[] testCaseEnigmaAnnotations = method
+									.getAnnotationsByType(testCaseEnigmaAnnotation);
+							for (TestCaseEnigma testCaseEnigma : testCaseEnigmaAnnotations) {
+								Callable<String> test = () -> {
+									String testResult = null;
+									if (!testCaseEnigma.enabled()) {
+										testResult = testCaseEnigma.name()
+												+ ": Ignored";
+										ignored.increment();
+
+									} else {
+										String[] params = testCaseEnigma
+												.params();
+										Type[] types = method
+												.getGenericParameterTypes();
+										if (params.length != types.length) {
+											throw new Exception(
+													"The annotation @TestCaseEnigma parameters does not match the paramters of the methode");
+										}
+
+										int length = params.length;
+										Object[] parameters = new Object[length];
+										int i = 0;
+										while (i < length) {
+											parameters[i] = convertStringToObject(
+													params[i], types[i]);
+											i++;
+										}
+
+										Object result = method.invoke(object,
+												parameters);
+										String actual = result.toString();
+										String expected = testCaseEnigma
+												.expected();
+										try {
+											assert (actual.equals(expected));
+											testResult = testCaseEnigma.name()
+													+ ": Passed";
+											passed.incrementAndGet();
+										} catch (AssertionError assertionError) {
+											testResult = testCaseEnigma.name()
+													+ ": Failed";
+											failed.increment();
+										}
+									}
+									return testResult;
+								};
+								callableTests.add(test);
+							}
+							return callableTests.stream();
+						}).collect(Collectors.toList());
+
+		ExecutorService executorService = Executors.newCachedThreadPool();
+		List<Future<String>> results = executorService.invokeAll(tasks);
+		results.forEach(testResult -> {
+			try {
+				System.out.println(testResult.get());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		});
+
+		executorService.shutdown();
+		System.out.println("Total: " + results.size() + ", Passed: "
+				+ passed.get() + ", Failed: " + failed.sum() + ", Ignored: "
+				+ ignored.sum());
+	}
+
+	// ch11Q9
+	public static void runEnigmaTest(Object object) throws Exception {
+		int total = 0;
+		int passed = 0;
+		int failed = 0;
+		int ignored = 0;
+
+		Class<TestCaseEnigma> testCaseEnigmaAnnotation = TestCaseEnigma.class;
+		Class<TestCaseEnigma.EningmaTestCases> enigmaTestCasesAnnotation = TestCaseEnigma.EningmaTestCases.class;
+
+		Method[] methods = object.getClass().getDeclaredMethods();
+
+		for (Method method : methods) {
+			if (method.isAnnotationPresent(testCaseEnigmaAnnotation)
+					|| method.isAnnotationPresent(enigmaTestCasesAnnotation)) {
+
+				TestCaseEnigma[] testCaseEnigmaAnnotations = method
+						.getAnnotationsByType(testCaseEnigmaAnnotation);
+				for (TestCaseEnigma testCaseEnigma : testCaseEnigmaAnnotations) {
+
+					if (!testCaseEnigma.enabled()) {
+						System.out.println(testCaseEnigma.name() + ": Ignored");
+						ignored++;
+						continue;
+					}
+					String[] params = testCaseEnigma.params();
+					Type[] types = method.getGenericParameterTypes();
+					if (params.length != types.length) {
+						throw new Exception(
+								"The annotation @TestCaseEnigma parameters does not match the paramters of the methode");
+					}
+
+					int length = params.length;
+					Object[] parameters = new Object[length];
+					int i = 0;
+					while (i < length) {
+						parameters[i] = convertStringToObject(params[i],
+								types[i]);
+						i++;
+					}
+
+					Object result = method.invoke(object, parameters);
+					String actual = result.toString();
+					String expected = testCaseEnigma.expected();
+					try {
+						assert (actual.equals(expected));
+						System.out.println(testCaseEnigma.name() + ": Passed");
+						passed++;
+					} catch (AssertionError assertionError) {
+						System.out.println(testCaseEnigma.name() + ": Failed");
+						failed++;
+					}
+
+					total++;
+				}
+			}
+		}
+
+		System.out.println("Total: " + total + ", Passed: " + passed
+				+ ", Failed: " + failed + ", Ignored: " + ignored);
+
+	}
+
+	private static Object convertStringToObject(String input, Type type) {
+		Object result = null;
+
+		switch (type.getTypeName()) {
+		case "boolean":
+			result = Boolean.valueOf(input);
+			break;
+		case "byte":
+			result = Byte.valueOf(input);
+			break;
+		case "short":
+			result = Short.valueOf(input);
+			break;
+		case "int":
+			result = Integer.valueOf(input);
+			break;
+		case "long":
+			result = Long.valueOf(input);
+			break;
+		case "float":
+			result = Float.valueOf(input);
+			break;
+		case "double":
+			result = Double.valueOf(input);
+			break;
+		case "char":
+			result = input.charAt(0);
+			break;
+		case "java.lang.String":
+			result = input;
+			break;
+		default:
+			try {
+				result = Class.forName(input).newInstance();
+			} catch (InstantiationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IllegalAccessException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ClassNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		return result;
+	}
+
+	@TestCaseEnigma(name = "Test 6", params = { "4", "9" }, expected = "true", enabled = true)
+	@TestCaseEnigma(name = "Test 5", params = { "4", "4" }, expected = "true", enabled = true)
+	@TestCaseEnigma(name = "Test 4", params = { "4", "9" }, expected = "false", enabled = true)
+	public boolean isEqual(int x, int y) {
+		return x == y ? true : false;
+	}
+
+	@TestCase(params = "45", expected = "264")
+	@TestCase(params = "4", expected = "24")
+	public static int factorial(int n) {
+		int result = n;
+		int i = n - 1;
+		while (i >= 1) {
+
+			result = result * i;
+			i--;
+		}
+		return result;
+	}
+
+	@TestCaseEnigma(name = "Test 3", params = "4", expected = "245", enabled = false)
+	@TestCaseEnigma(name = "Test 2", params = "4", expected = "245", enabled = true)
+	@TestCaseEnigma(name = "Test 1", params = "4", expected = "24", enabled = true)
+	@TestCase(params = "45", expected = "264")
+	@TestCase(params = "4", expected = "24")
+	public static int factorial_2(int n) {
+		int result = n;
+		int i = n - 1;
+		while (i >= 1) {
+
+			result = result * i;
+			i--;
+		}
+		return result;
+	}
+
+	@Param(name = "array", description = "Array")
+	@Param(name = "a", description = "Root description of A")
+	@Return(description = "ReturnDescription_4")
+	public static <A extends Employee> void f(ArrayList<A> array, A a) // same
+																		// as
+																		// public
+																		// static
+																		// <T
+																		// extends
+																		// Employee>
+																		// void
+																		// f(ArrayList<T>
+																		// array)
 	{
+		A e = array.get(0); // OK
+		// ArrayList<Employee> x = array; //compile error because ArrayList/
+		// generics are not covariant
+		array.add(a); // compile error
+		// array.add(new Manager()); //compile error
+	}
+
+	@Todo(message = "Reminder message 7", description = "root class, Methode: binarySearch")
+	public static void binarySearch() {
 		Random random = new Random();
 		int[] array = random.ints(100, 0, 100).toArray();
 		Arrays.sort(array);
 		System.out.println(Arrays.toString(array));
 		int j = 0;
-		while(j < array.length)
-		{
+		while (j < array.length) {
 			System.out.println(j + "=" + array[j]);
 			j++;
 		}
-		
+
 		int target = random.nextInt(100);
 		System.out.println("target = " + target);
 		int min = 0;
-		int max = array.length-1;
+		int max = array.length - 1;
 		boolean flag = true;
 		int guess = -1;
-		while(flag)
-		{
-			guess = (min+max)/2;
-			if(array[guess] == target)
-			{
+		while (flag) {
+			guess = (min + max) / 2;
+			if (array[guess] == target) {
 				flag = false;
-			}
-			else
-			{
-				if(array[guess] < target)
-				{
-					min=min+1;
+			} else {
+				if (array[guess] < target) {
+					min = min + 1;
+				} else {
+					max = max - 1;
 				}
-				else
-				{
-					max = max-1;
-				}
-				
-				if(min > max)
-				{
+
+				if (min > max) {
 					flag = false;
-					guess=-1;
+					guess = -1;
 				}
 			}
 		}
-		
+
 		System.out.println("Index = " + guess);
-		
+
 	}
 
 	public static void ch11q3() {
-		//You cannot have the constructor of an object calling itself again. That will give a compiler error. 
+		// You cannot have the constructor of an object calling itself again.
+		// That will give a compiler error.
 		Item item = new Item();
-		Point north = new Point(50,520);
+		Point north = new Point(50, 520);
 		item.from.cyclic = north;
 		Path path = Paths.get("/home/ramin/workspace/ch11/ch11Q2.ser");
 
-		//Serializing an object
+		// Serializing an object
 		DataOutputStreamCh11Q2 ch11q2 = new DataOutputStreamCh11Q2(path);
 		ch11q2.writeObject(item);
 
-		
-		//Deserializing an object
-		Item item2 = (Item)ch11q2.readObject();
+		// Deserializing an object
+		Item item2 = (Item) ch11q2.readObject();
 		System.out.println(item2);
-		
 
 	}
+
 	public static void ch11q2() {
 
 		Item item = new Item();
 		Path path = Paths.get("/home/ramin/workspace/ch11/ch11Q2.ser");
 
-		//Serializing an object
+		// Serializing an object
 		DataOutputStreamCh11Q2 ch11q2 = new DataOutputStreamCh11Q2(path);
 		ch11q2.writeObject(item);
-		
-		//Deserializing an object
-		Item item2 = (Item)ch11q2.readObject();
+
+		// Deserializing an object
+		Item item2 = (Item) ch11q2.readObject();
 		System.out.println(item2);
-		
 
 	}
-	
-
 
 	public Object ch11Q1() throws CloneNotSupportedException {
 		Class<Object> object = Object.class;
