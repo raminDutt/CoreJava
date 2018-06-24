@@ -11,6 +11,10 @@ public class Circle  extends Shape{
 		counter = 1;
 	}
 	
+	public static void  f()
+	{
+		System.out.println("Static Circle");
+	}
 	public Circle()
 	{
 		this(null,0);

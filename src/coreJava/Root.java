@@ -22,6 +22,7 @@ import java.io.StringWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
@@ -29,6 +30,7 @@ import java.net.PasswordAuthentication;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
 import java.nio.charset.MalformedInputException;
@@ -40,6 +42,30 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.DayOfWeek;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Month;
+import java.time.Period;
+import java.time.Year;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.chrono.AbstractChronology;
+import java.time.chrono.Chronology;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.Temporal;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalAdjuster;
+import java.time.temporal.TemporalAdjusters;
+import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -86,6 +112,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -95,6 +122,7 @@ import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
+import org.apache.http.impl.execchain.MainClientExec;
 import org.junit.Test;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -102,6 +130,7 @@ import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 
+import coreJava.resources.TimeInterval;
 import annotationProcessor.JavaDocProcessor.Param;
 import annotationProcessor.JavaDocProcessor.Return;
 import annotationProcessor.Resource;
@@ -109,45 +138,418 @@ import annotationProcessor.TestCaseEnigma;
 import annotationProcessor.TestCaseProcessor.TestCase;
 import annotationProcessor.Todo;
 
-
 public class Root {
 
 	public static void main(String args[]) throws Exception {
 
-		Item item = new Item();
-		Class<?> itemClass = item.getClass();
-
-		Todo[] todos = itemClass.getAnnotationsByType(Todo.class);
-
-		System.out.println(Arrays.toString(todos));
-
-		Annotation[] todos2 = itemClass.getAnnotations();
-		if (itemClass.isAnnotationPresent(Todo.class)
-				|| itemClass.isAnnotationPresent(Todo.Todos.class)) {
-
-		}
-		/*
-		 * for(Annotation annotation : todos2) { if(annotation instanceof
-		 * Todo.Todos) { Todo.Todos todo = (Todo.Todos) annotation; Todo[]
-		 * todos3 = todo.value(); for(Todo todo2 : todos3) {
-		 * 
-		 * System.out.println(todo2.description());
-		 * System.out.println(todo2.message()); System.out.println("****"); } }
-		 * 
-		 * }
-		 */
-
-		Todo todo = item.getClass().getAnnotation(Todo.class);
-		System.out.println(todo);
-
-		Todo todo5 = item.getClass().getDeclaredAnnotation(Todo.class);
-		System.out.println(todo5);
+		LocalDate today = LocalDate.now();
+		LocalDate bDay = LocalDate.of(1980, Month.JULY, 22);
+		System.out.println(ChronoUnit.MONTHS.between(bDay, today) + "Months");
+		System.out.println(ChronoUnit.WEEKS.between(bDay, today) + "weeks");
+		System.out.println(ChronoUnit.DAYS.between(bDay, today) + "days");
 
 	}
 
-	public <T> T f(Class<T> t) {
+	private static void ch12Q12() {
 
-		return null;
+		Root root = new Root();
+		Observer observer_africa = root.new Observer("Africa/Asmera");
+		Observer observer_losAneles = root.new Observer("America/Los_Angeles");
+		Observer observer_berlin = root.new Observer("Europe/Berlin");
+
+		AppointmentServer appointmentServer = root.new AppointmentServer();
+		appointmentServer
+				.setAppointment(
+						"Java Core",
+						"This is an appointment aimed at discussing key Java 8 features",
+						ZonedDateTime.now().plusMinutes(1));
+		
+		appointmentServer.register(observer_berlin);
+		appointmentServer.register(observer_losAneles);
+		appointmentServer.register(observer_africa);
+		try {
+			appointmentServer.start();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public class Observer {
+		ZoneId zoneId = null;
+
+		public Observer(String zoneId) {
+			this.zoneId = ZoneId.of(zoneId);
+		}
+
+		public void appointmentReminder(
+				AppointmentServer.Appointment appointment) {
+			appointment.printMessage(zoneId);
+		}
+	}
+
+	public class AppointmentServer {
+		public class Appointment {
+			private String title;
+			private String content;
+			private ZonedDateTime dateTime = null;
+
+			public Appointment(String title, String content,
+					ZonedDateTime dateTime) {
+				this.title = title;
+				this.content = content;
+				this.dateTime = dateTime;
+			}
+
+			public void printMessage(ZoneId zoneId) {
+				ZonedDateTime zonedDateTime = dateTime
+						.withZoneSameInstant(zoneId);
+				DateTimeFormatter formatter = DateTimeFormatter
+						.ofLocalizedDate(FormatStyle.FULL);
+				System.out.println("Appointment Reminder: "
+						+ formatter.format(zonedDateTime));
+				System.out.println("Appointment Title: " + title);
+				System.out.println(content);
+				System.out.println();
+			}
+
+		}
+
+		Appointment appointment = null;
+
+		List<Observer> observers = new ArrayList<>();
+
+		public void setAppointment(String title, String content,
+				ZonedDateTime appointment) {
+			this.appointment = new Appointment(title, content, appointment);
+
+		}
+
+		public void register(Observer observer) {
+			observers.add(observer);
+		}
+
+		public void sendReminder() {
+			observers.forEach(observer -> {
+				System.out.println("Appointment Reminder for Observer: " + observer.zoneId);
+				observer.appointmentReminder(appointment);
+			});
+	
+		}
+
+		public void start() throws InterruptedException {
+
+			Duration duration = Duration.ofMinutes(5); 
+			ZonedDateTime appointmentReminderRange = appointment.dateTime
+					.minus(duration);
+			Callable<Void> timer = () -> {
+				System.out
+						.println("AppointmentServer: "
+								+ Thread.currentThread().getName()
+								+ " has started ...\n");
+
+				while (true) {
+					ZonedDateTime now = ZonedDateTime.now(appointment.dateTime
+							.getZone());
+					if (now.isAfter(appointmentReminderRange)
+							&& now.isBefore(appointment.dateTime)) {
+						sendReminder();
+						break;
+					} else {
+						//System.out.println("Sleeping");
+						Thread.sleep(60000); // sleeping for 60 seconds before
+						//System.out.println("End Sleeping");
+					}
+
+				}
+				System.out.println("AppointmentServer: "
+						+ Thread.currentThread().getName() + " has ended!!!");
+				return null;
+			};
+
+			ExecutorService service = Executors.newCachedThreadPool();
+			service.submit(timer);
+			service.shutdown();
+		}
+
+	}
+
+	public static void ch12Q11() {
+		LocalTime departureTime = LocalTime.of(14, 00, 45);
+		LocalTime arrivalTime = LocalTime.of(16, 40);
+		String arrivalZone = "America/Los_Angeles";
+		String departureZone = "Europe/Berlin";
+		Duration duration = calcualteDuration(departureTime, departureZone,
+				arrivalTime, arrivalZone);
+
+		long totalSeconds = duration.getSeconds();
+		long hours = totalSeconds / 3600;
+		long minutes = (totalSeconds % 3600) / 60;
+		long seconds = ((totalSeconds % 3600) % 60);
+
+		System.out.println(totalSeconds);
+		System.out.println(duration);
+		System.out.println("Your flight will take " + hours + " hours "
+				+ minutes + " minutes " + seconds + " seconds");
+	}
+
+	private static Duration calcualteDuration(LocalTime departureTime,
+			String departureZone, LocalTime arrivalTime, String arrivalZone) {
+
+		LocalDate today = LocalDate.now();
+		ZonedDateTime departure = ZonedDateTime.of(today, departureTime,
+				ZoneId.of(departureZone));
+		ZonedDateTime arrival = ZonedDateTime.of(today, arrivalTime,
+				ZoneId.of(arrivalZone));
+
+		Duration duration = Duration.between(departure, arrival);
+
+		return duration;
+
+	}
+
+	public static void ch12Q10() {
+		ZoneId departureZoneId = ZoneId.of("America/Los_Angeles");
+		ZoneId destinationZoneId = ZoneId.of("Europe/Berlin");
+		ZonedDateTime departure = ZonedDateTime.of(LocalDate.of(2013, 3, 31),
+				LocalTime.of(2, 30), departureZoneId);
+		Duration duration = Duration.ofMinutes(160);
+
+		ZonedDateTime arrivalTime = departure.plus(duration);
+		System.out.println("Arrivale Time based on Departure City: "
+				+ arrivalTime);
+		ZonedDateTime destinationTime = arrivalTime
+				.withZoneSameInstant(destinationZoneId);
+		System.out.println(ZonedDateTime.ofInstant(arrivalTime.toInstant(),
+				destinationZoneId));
+		System.out.println("Arrivale Time based on Destination City: "
+				+ destinationTime);
+	}
+
+	public static void ch12Q9() {
+
+		ZoneId.getAvailableZoneIds()
+				.stream()
+				.filter(zone -> {
+					ZoneOffset zoneOffset = ZonedDateTime.of(
+							LocalDateTime.now(), ZoneId.of(zone)).getOffset();
+
+					int offset = zoneOffset.getTotalSeconds();
+					if (offset % 3600 == 0) {
+						return false;
+					}
+					return true;
+				}).forEach(System.out::println);
+	}
+
+	public static void ch12Q8() {
+		LocalDateTime today = LocalDateTime.now();
+		ZoneId.getAvailableZoneIds()
+				.stream()
+				.forEach(
+						zone -> {
+							ZonedDateTime zonedDateTime = ZonedDateTime.of(
+									today, ZoneId.of(zone));
+							System.out.println(zone + " "
+									+ zonedDateTime.getOffset());
+						});
+
+	}
+
+	public static void proxy() {
+		Iramin iramin = new Iramin() {
+
+			@Override
+			public String getName() {
+
+				return "Ramin";
+			}
+		};
+
+		Class<?>[] interfaces = Iramin.class.getInterfaces();
+		System.out.println(Arrays.toString(interfaces));
+		Object object = Proxy.newProxyInstance(Iramin.class.getClassLoader(),
+				new Class[] { Iramin.class }, (Object proxy, Method method,
+						Object[] arguments) -> {
+					System.out.println("Hello from handler");
+					return "Ramin Dutt";
+				});
+		ClassLoader classLoader = Root.class.getClassLoader();
+		URLClassLoader urlClassLoader = (URLClassLoader) (Root.class
+				.getClassLoader());
+		URL[] urls = urlClassLoader.getURLs();
+		System.out.println(Arrays.toString(urls));
+		System.out.println();
+		Iramin iramin2 = (Iramin) object;
+		System.out.println(iramin2.getName());
+
+		System.out.println(String.class.getClassLoader());
+		System.out.println(Iramin.class.getClassLoader());
+	}
+
+	public static void ch12Q7() {
+
+		LocalDateTime meeting1_start = LocalDateTime.of(2018, 6, 22, 10, 0);
+		LocalDateTime meeting1_end = LocalDateTime.of(2018, 6, 22, 11, 0);
+		TimeInterval meeting1 = new TimeInterval(meeting1_start, meeting1_end);
+
+		LocalDateTime meeting2_start = LocalDateTime.of(2018, 6, 23, 10, 00);
+		LocalDateTime meeting2_end = LocalDateTime.of(2018, 6, 23, 11, 00);
+		TimeInterval meeting2 = new TimeInterval(meeting2_start, meeting2_end);
+
+		System.out.println(meeting1.isConfict(meeting2));
+	}
+
+	private static void ch12Q6() {
+		LocalDate start = LocalDate.of(1901, 1, 1);
+		LocalDate end = LocalDate.of(2000, 12, 31);
+
+		List<LocalDate> friday13 = new ArrayList<LocalDate>();
+		LocalDate nextFriday = start;
+		while (nextFriday.isBefore(end)) {
+			nextFriday = nextFriday.with(TemporalAdjusters
+					.next(DayOfWeek.FRIDAY));
+			if (nextFriday.getDayOfMonth() == 13) {
+				friday13.add(nextFriday);
+			}
+		}
+
+		System.out.println(friday13.size());
+		DateTimeFormatter dateTimeFormatter = DateTimeFormatter
+				.ofPattern("MM/dd/yyyy");
+		friday13.forEach(d -> {
+			System.out.println(dateTimeFormatter.format(d));
+		});
+
+	}
+
+	private static void ch12Q5() {
+		LocalDate today = LocalDate.now();
+		LocalDate bDay = LocalDate.of(1980, Month.JULY, 22);
+		System.out.println(ChronoUnit.MONTHS.between(bDay, today) + "Months");
+		System.out.println(ChronoUnit.WEEKS.between(bDay, today) + "weeks");
+		System.out.println(ChronoUnit.DAYS.between(bDay, today) + "days");
+	}
+
+	private static void ch12Q4() {
+		cal(4, 2025);
+	}
+
+	private static void cal(int month, int year) {
+		int[][] calendar = new int[6][7];
+		LocalDate date = LocalDate.of(year, month, 1);
+		LocalDate firstDayOfNextMonth = date.with(TemporalAdjusters
+				.firstDayOfNextMonth());
+
+		int translation = date.getDayOfWeek().getValue() - 1;
+		while (!date.equals(firstDayOfNextMonth)) {
+
+			int a = date.getDayOfMonth() + translation;
+			int i = -1;
+			if (a % 7 == 0) {
+				i = a / 7 - 1;
+			} else {
+				i = a / 7;
+			}
+
+			int j = date.getDayOfWeek().getValue() - 1;
+			calendar[i][j] = date.getDayOfMonth();
+			// System.out.println(date);
+			date = date.plusDays(1);
+		}
+
+		int x = 0;
+		while (x < calendar.length) {
+			int y = 0;
+			while (y < calendar[x].length) {
+				int day = calendar[x][y];
+				if (day != 0) {
+					System.out.print(day);
+				}
+				System.out.print("\t");
+				y++;
+			}
+			System.out.println();
+			x++;
+		}
+	}
+
+	private static void ch12Q3() {
+
+		LocalDate today = LocalDate.now();
+		Predicate<LocalDate> predicate = date -> (date.getMonth() == Month.DECEMBER)
+				&& date.getDayOfWeek() == DayOfWeek.MONDAY;
+
+		TemporalAdjuster adjuster = next(predicate);
+		LocalDate localDate = today.with(adjuster);
+		System.out.println(localDate);
+	}
+
+	private static TemporalAdjuster next(Predicate<LocalDate> predicate) {
+
+		TemporalAdjuster nextAdjuster = TemporalAdjusters
+				.ofDateAdjuster(date -> {
+					LocalDate nextDay = null;
+					int i = 1;
+					boolean flag = true;
+					while (flag) {
+						nextDay = date.plusDays(i);
+						if (predicate.test(nextDay)) {
+							flag = false;
+						}
+						i++;
+					}
+
+					return nextDay;
+				});
+
+		return nextAdjuster;
+	}
+
+	public static void ch12Q2() {
+		System.out.println(LocalDate.of(2002, 2, 29).plusYears(4));
+	}
+
+	public static void ch12q1(int year) {
+		LocalDate programmersDay = LocalDate.ofYearDay(
+				Year.of(year).getValue(), 256);
+		System.out.println(programmersDay);
+
+	}
+
+	public static void swap() {
+		Random random = new Random();
+		int[] array = random.ints(0, 100).limit(10).toArray();
+		System.out.println(Arrays.toString(array));
+
+		// Sorting
+		int i = 1;
+		int count = 0;
+		int size = array.length;
+		while (i < size) {
+
+			if (array[i] < array[i - 1]) {
+				int temp = array[i - 1];
+				array[i - 1] = array[i];
+				array[i] = temp;
+				count++;
+				int j = i - 1;
+				while (j >= 1) {
+					if (array[j] < array[j - 1]) {
+						temp = array[j];
+						array[j] = array[j - 1];
+						array[j - 1] = temp;
+						j--;
+						count++;
+					} else {
+						j = -1;
+					}
+				}
+
+			}
+			i++;
+		}
+		System.out.println(Arrays.toString(array));
+		System.out.println("Count = " + count);
 	}
 
 	public static void ch11Q10() {

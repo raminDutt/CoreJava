@@ -5,7 +5,10 @@ import java.lang.reflect.InvocationTargetException;
 
 public abstract class Shape<T> implements Cloneable{
 	protected Point center;
-	
+	public static void f()
+	{
+		System.out.println("Static Shape");
+	}
 	public void moveBy(double dx, double dy)
 	{
 /*		center.x = center.x + dx;
