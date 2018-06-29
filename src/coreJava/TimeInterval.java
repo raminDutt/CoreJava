@@ -1,4 +1,4 @@
-package coreJava.resources;
+package coreJava;
 
 import java.time.LocalDateTime;
 

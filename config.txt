@@ -1,0 +1,2 @@
+/home/ramin/.m2/repository/Plugin/PluginJupiter/0.0.1-SNAPSHOT/PluginJupiter-0.0.1-SNAPSHOT.jar
+/home/ramin/.m2/repository/Plugin/PluginMars/0.0.1-SNAPSHOT/PluginMars-0.0.1-SNAPSHOT.jar

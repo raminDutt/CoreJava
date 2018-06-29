@@ -44,28 +44,19 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.DayOfWeek;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Month;
-import java.time.Period;
 import java.time.Year;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.time.chrono.AbstractChronology;
-import java.time.chrono.Chronology;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
-import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.Temporal;
-import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAdjusters;
-import java.time.temporal.TemporalField;
-import java.time.temporal.TemporalUnit;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -112,7 +103,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -122,31 +112,69 @@ import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
-import org.apache.http.impl.execchain.MainClientExec;
-import org.junit.Test;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 
-import coreJava.resources.TimeInterval;
 import annotationProcessor.JavaDocProcessor.Param;
 import annotationProcessor.JavaDocProcessor.Return;
 import annotationProcessor.Resource;
 import annotationProcessor.TestCaseEnigma;
 import annotationProcessor.TestCaseProcessor.TestCase;
 import annotationProcessor.Todo;
+import framework.IPlugin;
 
 public class Root {
 
 	public static void main(String args[]) throws Exception {
+		
+		List<IPlugin> iramin = IPlugin.INSTANCE;
+		iramin.forEach(plugin -> System.out.println(plugin.getName()));
+		System.out.println("The end");
 
-		LocalDate today = LocalDate.now();
-		LocalDate bDay = LocalDate.of(1980, Month.JULY, 22);
-		System.out.println(ChronoUnit.MONTHS.between(bDay, today) + "Months");
-		System.out.println(ChronoUnit.WEEKS.between(bDay, today) + "weeks");
-		System.out.println(ChronoUnit.DAYS.between(bDay, today) + "days");
+	}
+
+	private static void selectionSort() {
+		Random generator = new Random();
+		int[] array = generator.ints(0, 100).limit(1000).toArray();
+		int[] copyArray = Arrays.copyOf(array, array.length);
+
+		int size = array.length;
+		int i = 0;
+		long start = System.currentTimeMillis();
+		int count = 0;
+		while (i < size) {
+			int min_index = i;
+			int min = array[i];
+			int j = i;
+			while (j < size) {
+				if (array[j] < min) {
+					min_index = j;
+					min = array[min_index];
+				}
+				count++;
+				j++;
+			}
+			int temp = array[i];
+			array[i] = array[min_index];
+			array[min_index] = temp;
+			i++;
+		}
+		long end = System.currentTimeMillis();
+		System.out.println("Selection sort: " + Math.subtractExact(end, start)
+				+ "ms");
+		System.out.println(Arrays.toString(array));
+		System.out.println("Count " + count);
+
+		long start1 = System.currentTimeMillis();
+		int raminCount = raminSelectionSort(copyArray);
+		long end1 = System.currentTimeMillis();
+		System.out.println(Arrays.toString(copyArray));
+		System.out.println(raminCount);
+		System.out.println("raminSelectionSort : "
+				+ Math.subtractExact(end1, start1) + "ms");
 
 	}
 
@@ -163,7 +191,7 @@ public class Root {
 						"Java Core",
 						"This is an appointment aimed at discussing key Java 8 features",
 						ZonedDateTime.now().plusMinutes(1));
-		
+
 		appointmentServer.register(observer_berlin);
 		appointmentServer.register(observer_losAneles);
 		appointmentServer.register(observer_africa);
@@ -230,22 +258,22 @@ public class Root {
 
 		public void sendReminder() {
 			observers.forEach(observer -> {
-				System.out.println("Appointment Reminder for Observer: " + observer.zoneId);
+				System.out.println("Appointment Reminder for Observer: "
+						+ observer.zoneId);
 				observer.appointmentReminder(appointment);
 			});
-	
+
 		}
 
 		public void start() throws InterruptedException {
 
-			Duration duration = Duration.ofMinutes(5); 
+			Duration duration = Duration.ofMinutes(5);
 			ZonedDateTime appointmentReminderRange = appointment.dateTime
 					.minus(duration);
 			Callable<Void> timer = () -> {
-				System.out
-						.println("AppointmentServer: "
-								+ Thread.currentThread().getName()
-								+ " has started ...\n");
+				System.out.println("AppointmentServer: "
+						+ Thread.currentThread().getName()
+						+ " has started ...\n");
 
 				while (true) {
 					ZonedDateTime now = ZonedDateTime.now(appointment.dateTime
@@ -255,9 +283,9 @@ public class Root {
 						sendReminder();
 						break;
 					} else {
-						//System.out.println("Sleeping");
+						// System.out.println("Sleeping");
 						Thread.sleep(60000); // sleeping for 60 seconds before
-						//System.out.println("End Sleeping");
+						// System.out.println("End Sleeping");
 					}
 
 				}
@@ -356,7 +384,7 @@ public class Root {
 	}
 
 	public static void proxy() {
-		Iramin iramin = new Iramin() {
+		IPlugin iramin = new IPlugin() {
 
 			@Override
 			public String getName() {
@@ -365,10 +393,10 @@ public class Root {
 			}
 		};
 
-		Class<?>[] interfaces = Iramin.class.getInterfaces();
+		Class<?>[] interfaces = IPlugin.class.getInterfaces();
 		System.out.println(Arrays.toString(interfaces));
-		Object object = Proxy.newProxyInstance(Iramin.class.getClassLoader(),
-				new Class[] { Iramin.class }, (Object proxy, Method method,
+		Object object = Proxy.newProxyInstance(IPlugin.class.getClassLoader(),
+				new Class[] { IPlugin.class }, (Object proxy, Method method,
 						Object[] arguments) -> {
 					System.out.println("Hello from handler");
 					return "Ramin Dutt";
@@ -379,11 +407,11 @@ public class Root {
 		URL[] urls = urlClassLoader.getURLs();
 		System.out.println(Arrays.toString(urls));
 		System.out.println();
-		Iramin iramin2 = (Iramin) object;
+		IPlugin iramin2 = (IPlugin) object;
 		System.out.println(iramin2.getName());
 
 		System.out.println(String.class.getClassLoader());
-		System.out.println(Iramin.class.getClassLoader());
+		System.out.println(IPlugin.class.getClassLoader());
 	}
 
 	public static void ch12Q7() {
@@ -521,6 +549,12 @@ public class Root {
 		int[] array = random.ints(0, 100).limit(10).toArray();
 		System.out.println(Arrays.toString(array));
 
+		int count = raminSelectionSort(array);
+		System.out.println(Arrays.toString(array));
+		System.out.println("Count = " + count);
+	}
+
+	private static int raminSelectionSort(int[] array) {
 		// Sorting
 		int i = 1;
 		int count = 0;
@@ -548,8 +582,7 @@ public class Root {
 			}
 			i++;
 		}
-		System.out.println(Arrays.toString(array));
-		System.out.println("Count = " + count);
+		return count;
 	}
 
 	public static void ch11Q10() {
@@ -583,7 +616,7 @@ public class Root {
 						String resourceContent = bufferedReader.lines()
 								.collect(Collectors.joining("\n"));
 						field.setAccessible(true);
-						field.set(object, resourceContent);
+						field.set(object, resourceContent); // Injection
 
 					} catch (IOException e) {
 						e.printStackTrace();
