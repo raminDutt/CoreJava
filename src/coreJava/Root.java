@@ -19,6 +19,7 @@ import java.io.ObjectStreamException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.Character.UnicodeScript;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -42,6 +43,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.Collator;
+import java.text.MessageFormat;
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
+import java.text.NumberFormat;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -49,11 +55,13 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Month;
 import java.time.Year;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.time.format.TextStyle;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAdjusters;
@@ -63,21 +71,27 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Currency;
 import java.util.Deque;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Locale.Category;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Random;
+import java.util.ResourceBundle;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.Vector;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
@@ -101,8 +115,11 @@ import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.prefs.Preferences;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -112,6 +129,8 @@ import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
+import org.apache.xml.serialize.XHTMLSerializer;
+import org.junit.Assert;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -129,11 +148,507 @@ import framework.IPlugin;
 public class Root {
 
 	public static void main(String args[]) throws Exception {
+		ch13q11();
 		
-		List<IPlugin> iramin = IPlugin.INSTANCE;
-		iramin.forEach(plugin -> System.out.println(plugin.getName()));
-		System.out.println("The end");
 
+	}
+	
+	public static void ch13q11()
+	{
+		ResourceBundle bundle = ResourceBundle.getBundle("coreJava.rb.Ch13Q11rb");
+		double[] value = (double[])bundle.getObject("defaultPaperSize");
+		System.out.println(Arrays.toString(value));
+	}
+
+	private static void ch13q10()
+	{
+		//Not sure how???
+	}
+	private static void ch13q9() {
+
+		Function<Locale, String> internationalize = locale -> {
+
+			ResourceBundle bundle = ResourceBundle.getBundle(
+					"coreJava.LabelsBundle", locale);
+			String template = bundle.getString("message");
+
+			String formatedMessage = MessageFormat
+					.format(template, "Ramin", 45);
+			return formatedMessage;
+		};
+
+		System.out.println(internationalize.apply(Locale.getDefault(Category.DISPLAY)));
+		System.out.println(internationalize.apply(Locale.GERMAN));
+		System.out.println(internationalize.apply(Locale.FRANCE));
+		System.out.println(internationalize.apply(Locale.CANADA_FRENCH));
+		System.out.println(internationalize.apply(Locale.CANADA));
+	}
+
+	private static void ch13q8() {
+
+		// BMP
+		IntFunction<String> toHex = codePoint -> Integer.toHexString(codePoint);
+		IntPredicate predicate = codepoint -> {
+			if (0 <= codepoint && codepoint <= 127) {
+				return true;
+			} else {
+				return false;
+			}
+		};
+
+		BinaryOperator<String> function = (character, normalizedString) -> {
+			String unicode = character
+					+ "("
+					+ Arrays.toString(character.codePoints().mapToObj(toHex)
+							.toArray())
+					+ ") <--> "
+					+ normalizedString
+					+ "("
+					+ Arrays.toString(normalizedString.codePoints()
+							.mapToObj(toHex).toArray()) + ")";
+			return unicode;
+		};
+
+		List<String> result = new ArrayList<>();
+		int codePoint = 0;
+		while (codePoint <= 0xFFFF) {
+			String character = new String(Character.toChars(codePoint));
+
+			// NFKD
+			String normalized_NFKD = Normalizer.normalize(character, Form.NFKD);
+			long count_NFKD = normalized_NFKD.codePoints().filter(predicate)
+					.count();
+			String unicode = "";
+			if (count_NFKD >= 2) {
+				unicode = " NFKD=" + function.apply(character, normalized_NFKD);
+			}
+
+			// NFKC
+			String normalized_NFKC = Normalizer.normalize(character, Form.NFKC);
+			long count_NFKC = normalized_NFKC.codePoints().filter(predicate)
+					.count();
+			if (count_NFKC >= 2) {
+				unicode = unicode + " NFKC="
+						+ function.apply(character, normalized_NFKC);
+			}
+
+			if (!unicode.isEmpty()) {
+				result.add(unicode);
+			}
+			codePoint++;
+		}
+
+		result.forEach(System.out::println);
+
+	}
+
+	private static void ch13q7() {
+		Map<Locale, List<String>> map = new HashMap<Locale, List<String>>();
+		Locale[] locales = Locale.getAvailableLocales();
+		for (Locale locale : locales) {
+			List<String> list = new ArrayList<String>();
+			Month[] months = Month.values();
+			for (Month month : months) {
+
+				String displayName = month.getDisplayName(TextStyle.FULL,
+						locale);
+				String standalone = month.getDisplayName(
+						TextStyle.FULL_STANDALONE, locale);
+
+				// check if this is a number
+				if (!standalone.matches("\\d*")
+						&& !displayName.equals(standalone)) {
+					list.add(displayName + "<->" + standalone);
+				}
+			}
+			if (!list.isEmpty()) {
+				map.put(locale, list);
+			}
+		}
+
+		map.entrySet()
+				.stream()
+				.forEach(
+						entry -> {
+							Locale locale = entry.getKey();
+							System.out.println("----------");
+							System.out.println(locale.getDisplayName() + " "
+									+ locale.getCountry());
+							System.out.println("----------");
+							entry.getValue().forEach(System.out::println);
+
+						});
+	}
+
+	private static void ch13q6c() {
+		Set<Currency> availableCurrencies = Currency.getAvailableCurrencies();
+		Map<Currency, Map<String, Set<Locale>>> currencyToSymbolsToLocales = new HashMap<>();
+		availableCurrencies
+				.forEach(currency -> {
+					Locale[] availableLocales = Locale.getAvailableLocales();
+					Map<String, Set<Locale>> symbolsToLocale = new HashMap<>();
+					for (Locale locale : availableLocales) {
+						String symbole = currency.getSymbol(locale);
+						Set<Locale> locales = new HashSet<>();
+						locales.add(locale);
+						BiFunction<Set<Locale>, Set<Locale>, Set<Locale>> remappingFunction = (
+								oldValue, newValue) -> {
+							Set<Locale> mergeSet = new HashSet<>(oldValue);
+							mergeSet.addAll(newValue);
+							return mergeSet;
+						};
+						symbolsToLocale.merge(symbole, locales,
+								remappingFunction);
+					}
+					if (symbolsToLocale.keySet().size() >= 2) {
+						currencyToSymbolsToLocales.put(currency,
+								symbolsToLocale);
+					}
+				});
+
+		Iterator<Entry<Currency, Map<String, Set<Locale>>>> iterator1 = currencyToSymbolsToLocales
+				.entrySet().iterator();
+
+		while (iterator1.hasNext()) {
+			Entry<Currency, Map<String, Set<Locale>>> entry1 = iterator1.next();
+			Currency currency = entry1.getKey();
+
+			String symboles = "";
+
+			Iterator<Entry<String, Set<Locale>>> iterator2 = entry1.getValue()
+					.entrySet().iterator();
+			while (iterator2.hasNext()) {
+
+				Entry<String, Set<Locale>> entry2 = iterator2.next();
+				String currencySymbole = entry2.getKey();
+				String localesString = "{";
+				Set<Locale> locales = entry2.getValue();
+				Iterator<Locale> iterator3 = locales.iterator();
+				while (iterator3.hasNext()) {
+					localesString = localesString
+							+ iterator3.next().getDisplayName();
+					if (iterator3.hasNext()) {
+						localesString = localesString + ",";
+					}
+
+				}
+				localesString = localesString + "}";
+
+				symboles = symboles + "(" + currencySymbole + ", "
+						+ localesString + ")";
+				if (iterator2.hasNext()) {
+					symboles = symboles + ",";
+				}
+			}
+
+			System.out.println(currency.getDisplayName() + "->" + symboles);
+
+		}
+
+	}
+
+	public static boolean polindrome(String word) {
+		if (word.length() <= 1)
+			return true;
+		int length = word.length();
+		if (word.charAt(0) == word.charAt(length - 1)) {
+			String sub = word.substring(1, length - 1);
+			return polindrome(sub);
+		}
+		return false;
+	}
+
+	public static boolean polindrome(String word, int index) {
+		if (word.length() <= 1)
+			return true;
+
+		int length = word.length();
+		if (length % 2 == 0) {
+			if (word.charAt(index) == word.charAt(length - 1 - index)) {
+				if (index < length / 2) {
+					return polindrome(word, ++index);
+				}
+				return true;
+			}
+		} else {
+			if (word.charAt(index) == word.charAt(length - 1 - index)) {
+				if (index < length / 2 + 1) {
+					return polindrome(word, ++index);
+				}
+				return true;
+			}
+		}
+
+		return false;
+
+	}
+
+	public static void ch13q6b() {
+		Set<Currency> availableCurrencies = Currency.getAvailableCurrencies();
+
+		/**
+		 * This transforms a Map<String,String> to Map<String,Set<Set>>
+		 */
+		BiFunction<Map<String, Set<String>>, Map<String, String>, Map<String, Set<String>>> accumulator = (
+				i, t) -> {
+			Set<String> set = new HashSet<>(t.values());
+			String k = t.keySet().iterator().next();
+			i.put(k, set);
+			return i;
+		};
+
+		BinaryOperator<Map<String, Set<String>>> combiner = (m1, m2) -> {
+			Map<String, Set<String>> mapMerge = new HashMap<>(m1);
+			m2.entrySet().forEach(
+					entry -> {
+						mapMerge.merge(entry.getKey(), entry.getValue(), (set1,
+								set2) -> {
+							Set<String> setMerge = new HashSet<>(set1);
+							setMerge.addAll(set2);
+							return setMerge;
+						});
+					});
+			return mapMerge;
+		};
+		availableCurrencies
+				.stream()
+				.map(currency -> {
+					Map<String, Set<String>> identity = new HashMap<>();
+
+					Map<String, Set<String>> reduced = Stream
+							.of(Locale.getAvailableLocales())
+							.map(locale -> {
+								Map<String, String> map = new HashMap<String, String>();
+								map.put(currency.getSymbol(locale),
+										locale.getDisplayName());
+								return map;
+							}).reduce(identity, accumulator, combiner);
+					if (reduced.values().size() >= 2) {
+						Map<String, Map<String, Set<String>>> m = new HashMap<>();
+						m.put(currency.getDisplayName(), reduced);
+						return m;
+					} else {
+						return null;
+					}
+
+				}).filter(map -> {
+					if (map == null) {
+						return false;
+					} else {
+						return true;
+					}
+				}).forEach(System.out::println);
+	}
+
+	public static void ch13q6() {
+
+		/*
+		 * Currency currency =
+		 * NumberFormat.getCurrencyInstance(Locale.US).getCurrency();
+		 * 
+		 * System.out.println(currency + " " +currency.getSymbol());
+		 * 
+		 * Currency.getAvailableCurrencies().forEach(System.out::println);
+		 */
+
+		Map<Currency, Map<Locale, String>> map = new HashMap<Currency, Map<Locale, String>>();
+
+		Set<Currency> currencies = Currency.getAvailableCurrencies();
+		for (Currency currency : currencies) {
+			Map<Locale, String> map2 = new HashMap<Locale, String>();
+			Locale[] locales = Locale.getAvailableLocales();
+			for (Locale locale : locales) {
+				String symbol = currency.getSymbol(locale);
+
+				map2.put(locale, symbol);
+			}
+			map.put(currency, map2);
+		}
+
+		map.entrySet()
+				.stream()
+				.filter(entry -> {
+					long count = entry.getValue().values().stream().distinct()
+							.count();
+					if (count >= 2) {
+						return true;
+					} else {
+						return false;
+					}
+
+				})
+				.forEach(
+						entry -> {
+							String currencyName = entry.getKey()
+									.getDisplayName();
+							Stream<Entry<Locale, String>> stream = entry
+									.getValue().entrySet().stream();
+
+							Map<String, Set<String>> symbolsToLocale = stream.collect(Collectors
+									.toMap(entryLocaleToSymb -> entryLocaleToSymb
+											.getValue(),
+											entryLocaleToSymb -> Collections
+													.singleton(entryLocaleToSymb
+															.getKey()
+															.getDisplayName())
+
+											,
+											(symb1, symb2) -> {
+												Set<String> symbols = new HashSet<>(
+														symb1);
+												symbols.addAll(symb2);
+												return symbols;
+											}));
+
+							symbolsToLocale.forEach((k, v) -> {
+								System.out.println(currencyName + "-> " + k
+										+ "->" + v);
+							});
+						});
+
+	}
+
+	public static void ch13q5() {
+		Locale canadaLocale = Locale.CANADA;
+		Locale[] locales = Locale.getAvailableLocales();
+		Comparator<? super String> comparator = Collator
+				.getInstance(canadaLocale);
+		Set<String> currencies = new TreeSet<>(comparator);
+		for (Locale locale : locales) {
+			String currency = NumberFormat.getCurrencyInstance(locale)
+					.getCurrency().getDisplayName(canadaLocale);
+
+			if (!currency.isEmpty()) {
+				currencies.add(currency);
+			}
+		}
+		currencies.forEach(System.out::println);
+	}
+
+	public static void ch13q4() {
+		Locale canadaLocale = Locale.CANADA;
+		Comparator<Object> comparator = Collator.getInstance(canadaLocale);
+		Set<String> set = new TreeSet<String>(comparator);
+		Locale[] locales = Locale.getAvailableLocales();
+		List<String> list = new ArrayList<>();
+		for (Locale locale : locales) {
+			String language = locale.getDisplayLanguage(canadaLocale);
+			if (!language.isEmpty()) {
+				set.add(language);
+				list.add(language);
+			}
+
+		}
+
+		set.forEach(System.out::println);
+		System.out.println("size=" + set.size());
+		System.out.println("size=" + list.size());
+
+	}
+
+	public static void ch13Q3() {
+		Locale usa = Locale.US;
+		DateTimeFormatter usaFormatter = DateTimeFormatter.ofLocalizedDate(
+				FormatStyle.FULL).withLocale(usa);
+
+		LocalDateTime now = LocalDateTime.now();
+		String usaDateTime = usaFormatter.format(now);
+		Locale[] locales = Locale.getAvailableLocales();
+		for (Locale locale : locales) {
+			DateTimeFormatter formatter = DateTimeFormatter.ofLocalizedDate(
+					FormatStyle.FULL).withLocale(locale);
+			String dateTime = formatter.format(now);
+			if (usaDateTime.equals(dateTime)) {
+				System.out.println(locale + " " + locale.getDisplayName()
+						+ ": " + usaDateTime + "->" + dateTime);
+			}
+		}
+
+	}
+
+	public static void ch13Q2() {
+
+		Locale[] locales = Locale.getAvailableLocales();
+
+		for (Locale locale : locales) {
+			NumberFormat format = NumberFormat.getNumberInstance(locale);
+			String result = format.format(Double.parseDouble("123456789"));
+			String array[] = result.split("\\D+");
+
+			String result2 = Stream.of(array).collect(Collectors.joining());
+
+			if (!result2.equals("123456789")) {
+				System.out.println(locale + ":" + result + "->" + result2);
+			}
+		}
+	}
+
+	public static void ch13Q1() {
+		LocalDateTime now = LocalDateTime.now();
+		DateTimeFormatter franceFormatter = DateTimeFormatter.ofLocalizedDate(
+				FormatStyle.FULL).withLocale(Locale.FRANCE);
+		DateTimeFormatter chineFormatter = DateTimeFormatter.ofLocalizedDate(
+				FormatStyle.FULL).withLocale(Locale.CHINA);
+		Locale thailand = new Locale.Builder().setRegion("TH")
+				.setLanguage("Thai").setScript("Thai").build();
+		DateTimeFormatter thailandFormatter = DateTimeFormatter
+				.ofLocalizedDate(FormatStyle.FULL).withLocale(thailand);
+		System.out.println(franceFormatter.format(now));
+		System.out.println(chineFormatter.format(now));
+		System.out.println(thailandFormatter.format(now));
+
+	}
+
+	private static void factorial2() {
+
+		System.out.println("The value of 5! should be " + 5 * 4 * 3 * 2 * 1);
+		System.out.println("The value of 5! is " + fact_2(5));
+		System.out.println("The value of 0! should be 1");
+		System.out.println("The value of 0! is " + fact_2(0));
+		Assert.assertEquals(fact_2(5), 120);
+		Assert.assertEquals(fact_2(0), 1);
+	}
+
+	private static int fact(int n) {
+		int result = 1;
+		int i = 1;
+		while (i <= n) {
+			result = result * i;
+			i++;
+		}
+		return result;
+	}
+
+	private static int fact_2(int n) {
+		int result = 0;
+		if (n == 0) {
+			result = 1;
+		} else {
+			result = n * fact(n - 1);
+		}
+		return result;
+
+	}
+
+	private static void insertionSort() {
+		Random generator = new Random();
+		int[] array = generator.ints(0, 100).limit(10).toArray();
+		int i = 1;
+		int size = array.length;
+		System.out.println(Arrays.toString(array));
+		while (i < size) {
+			int j = i - 1;
+			int min = array[i];
+			while (j >= 0 && array[j] > min) {
+
+				array[j + 1] = array[j];
+				j--;
+			}
+			array[j + 1] = min;
+			i++;
+		}
+
+		System.out.println(Arrays.toString(array));
 	}
 
 	private static void selectionSort() {
