@@ -1,5 +1,6 @@
 package coreJava;
 
+
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
@@ -19,7 +20,6 @@ import java.io.ObjectStreamException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.Character.UnicodeScript;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -55,7 +55,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Month;
 import java.time.Year;
-import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -73,7 +72,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Currency;
 import java.util.Deque;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -119,7 +117,6 @@ import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.prefs.Preferences;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -129,8 +126,6 @@ import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
-import org.apache.xml.serialize.XHTMLSerializer;
-import org.junit.Assert;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -148,22 +143,108 @@ import framework.IPlugin;
 public class Root {
 
 	public static void main(String args[]) throws Exception {
-		ch13q11();
-		
-
+		powBTest();
 	}
 	
-	public static void ch13q11()
+	public static void powBTest()
 	{
-		ResourceBundle bundle = ResourceBundle.getBundle("coreJava.rb.Ch13Q11rb");
-		double[] value = (double[])bundle.getObject("defaultPaperSize");
+		System.out.println(powB(2, 0) + " " + powC(2, 0));
+		System.out.println(powB(20, 1)+ " " + powC(20, 1));
+		System.out.println(powB(20, -1)+ " " + powC(20, -1));
+		System.out.println(powB(2, 5) + " " + powC(2, 5));
+		System.out.println(powB(2, -5) + " " + powC(2, -5));
+		System.out.println(powB(3, 2) + " " + powC(3, 2));
+	}
+
+	
+	public static double powC(double x, int n)
+	{
+		if(n == 0)
+		{
+			return 1;
+		}
+		
+		if(n < 0)
+		{
+			return 1/powC(x,-n);
+		}
+		
+		if(n % 2 == 0)
+		{
+			double product = powC(x,n/2);
+			return product*product;
+		}
+		else
+		{
+			return x * powC(x,n-1);
+		}
+	}
+	
+	public static double powB(double x, int n) {
+
+		if(n==0)
+		{
+			return 1;
+		}
+		
+
+		if (n % 2 == 0) {
+			double product = powB(x,n/2);
+			return product * product;
+			
+		} else {
+						
+			if(n > 0)
+			{
+				return x * powB(x, n - 1);
+			}
+			else
+			{			
+				return 1/x * powB(x, n+1);
+			}
+		}
+
+	}
+
+	public static double pow(int x, int n) {
+
+		if (n == 0) {
+			return 1;
+		} else {
+			if (n > 0) {
+				return x * pow(x, n - 1);
+			} else {
+				return 1 / (double) x * pow(x, n + 1);
+
+			}
+		}
+	}
+
+	public static boolean palindrome2(String word) {
+		int length = word.length();
+		if (length <= 1)
+			return true;
+
+		if (word.charAt(0) == word.charAt(length - 1)) {
+			String w = word.substring(1, length - 1);
+			return palindrome2(w);
+		}
+		return false;
+
+	}
+
+	public static void ch13q11() {
+		ResourceBundle bundle = ResourceBundle
+				.getBundle("coreJava.rb.Ch13Q11rb");
+		double[] value = (double[]) bundle.getObject("defaultPaperSize");
 		System.out.println(Arrays.toString(value));
 	}
 
-	private static void ch13q10()
-	{
-		//Not sure how???
+	private static void ch13q10() {
+		// Not sure how???
+		System.out.println(Charset.availableCharsets());
 	}
+
 	private static void ch13q9() {
 
 		Function<Locale, String> internationalize = locale -> {
@@ -177,7 +258,8 @@ public class Root {
 			return formatedMessage;
 		};
 
-		System.out.println(internationalize.apply(Locale.getDefault(Category.DISPLAY)));
+		System.out.println(internationalize.apply(Locale
+				.getDefault(Category.DISPLAY)));
 		System.out.println(internationalize.apply(Locale.GERMAN));
 		System.out.println(internationalize.apply(Locale.FRANCE));
 		System.out.println(internationalize.apply(Locale.CANADA_FRENCH));
@@ -605,8 +687,8 @@ public class Root {
 		System.out.println("The value of 5! is " + fact_2(5));
 		System.out.println("The value of 0! should be 1");
 		System.out.println("The value of 0! is " + fact_2(0));
-		Assert.assertEquals(fact_2(5), 120);
-		Assert.assertEquals(fact_2(0), 1);
+		//Assert.assertEquals(fact_2(5), 120);
+		//Assert.assertEquals(fact_2(0), 1);
 	}
 
 	private static int fact(int n) {
@@ -1153,7 +1235,7 @@ public class Root {
 
 	}
 
-	public static void runEnigmaTestB(Object object) throws Exception {
+	public static void ch11Q9B(Object object) throws Exception {
 		AtomicInteger passed = new AtomicInteger();
 		LongAdder failed = new LongAdder();
 		LongAdder ignored = new LongAdder();
@@ -1242,7 +1324,7 @@ public class Root {
 	}
 
 	// ch11Q9
-	public static void runEnigmaTest(Object object) throws Exception {
+	public static void ch11Q9(Object object) throws Exception {
 		int total = 0;
 		int passed = 0;
 		int failed = 0;
