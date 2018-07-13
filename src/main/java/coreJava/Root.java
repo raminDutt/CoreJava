@@ -1,6 +1,5 @@
 package coreJava;
 
-
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
@@ -82,6 +81,7 @@ import java.util.Locale;
 import java.util.Locale.Category;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Random;
@@ -143,64 +143,69 @@ import framework.IPlugin;
 public class Root {
 
 	public static void main(String args[]) throws Exception {
-		powBTest();
+		
 	}
-	
-	public static void powBTest()
-	{
+
+	public static String reverse(String word) {
+		Objects.requireNonNull(word);
+		
+		Stack<Character> stack = new Stack<>();
+		int length = word.length();
+
+		char[] cs = word.toCharArray();
+		for (char c : cs) {
+			stack.push(c);
+		}
+
+		StringBuilder builder = new StringBuilder();
+		while (!stack.isEmpty()) {
+			builder.append(stack.pop());
+		}
+		return builder.toString();
+	}
+
+	public static void powBTest() {
 		System.out.println(powB(2, 0) + " " + powC(2, 0));
-		System.out.println(powB(20, 1)+ " " + powC(20, 1));
-		System.out.println(powB(20, -1)+ " " + powC(20, -1));
+		System.out.println(powB(20, 1) + " " + powC(20, 1));
+		System.out.println(powB(20, -1) + " " + powC(20, -1));
 		System.out.println(powB(2, 5) + " " + powC(2, 5));
 		System.out.println(powB(2, -5) + " " + powC(2, -5));
 		System.out.println(powB(3, 2) + " " + powC(3, 2));
 	}
 
-	
-	public static double powC(double x, int n)
-	{
-		if(n == 0)
-		{
+	public static double powC(double x, int n) {
+		if (n == 0) {
 			return 1;
 		}
-		
-		if(n < 0)
-		{
-			return 1/powC(x,-n);
-		}
-		
-		if(n % 2 == 0)
-		{
-			double product = powC(x,n/2);
-			return product*product;
-		}
-		else
-		{
-			return x * powC(x,n-1);
-		}
-	}
-	
-	public static double powB(double x, int n) {
 
-		if(n==0)
-		{
-			return 1;
+		if (n < 0) {
+			return 1 / powC(x, -n);
 		}
-		
 
 		if (n % 2 == 0) {
-			double product = powB(x,n/2);
+			double product = powC(x, n / 2);
 			return product * product;
-			
 		} else {
-						
-			if(n > 0)
-			{
+			return x * powC(x, n - 1);
+		}
+	}
+
+	public static double powB(double x, int n) {
+
+		if (n == 0) {
+			return 1;
+		}
+
+		if (n % 2 == 0) {
+			double product = powB(x, n / 2);
+			return product * product;
+
+		} else {
+
+			if (n > 0) {
 				return x * powB(x, n - 1);
-			}
-			else
-			{			
-				return 1/x * powB(x, n+1);
+			} else {
+				return 1 / x * powB(x, n + 1);
 			}
 		}
 
@@ -687,8 +692,8 @@ public class Root {
 		System.out.println("The value of 5! is " + fact_2(5));
 		System.out.println("The value of 0! should be 1");
 		System.out.println("The value of 0! is " + fact_2(0));
-		//Assert.assertEquals(fact_2(5), 120);
-		//Assert.assertEquals(fact_2(0), 1);
+		// Assert.assertEquals(fact_2(5), 120);
+		// Assert.assertEquals(fact_2(0), 1);
 	}
 
 	private static int fact(int n) {
