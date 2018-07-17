@@ -145,8 +145,65 @@ public class Root {
 	public static void main(String args[]) throws Exception {
 		
 	}
+	
+	public static boolean junitAndMockito_ch4Q1_pwdValidation(String pwd) 
+	{
+	    int PASSWORD_MIN_LENGTH = 10;
+	    int MIN_DIGITS=3;
+	    Objects.requireNonNull(pwd, "Password must Not be null");
+	    
+	    if(pwd.length() < PASSWORD_MIN_LENGTH)
+	    {
+		return false;
+	    }
+	    
+	    Pattern pattern = Pattern.compile("[0-9]");
+	    Matcher matcher = pattern.matcher(pwd);
+	    int i= 0;
+	    while(matcher.find())
+	    {
+		i++;
+	    }
 
-	public static String reverse(String word) {
+	    if(i < MIN_DIGITS)
+	    {
+		return false;
+	    }
+	        
+	    if(!pwd.contains("_") || !pwd.contains("#"))
+	    {
+		return false;
+	    }
+	    
+	    Pattern pattern2 = Pattern.compile("[a-z]+[A-Z]+");
+	    Matcher matcher2 =  pattern2.matcher(pwd);
+	    if(!matcher2.find())
+	    {
+		return false;
+	    }
+	    return true;
+	}
+
+	public static String junitAndMockito_ch4Q2_getNumber(String input) {
+
+	    Pattern pattern = Pattern.compile("\\d\\d\\d+");
+	    Matcher matcher = pattern.matcher(input);
+	    String result = "";
+	    while(matcher.find())
+	    {
+		if(result.isEmpty())
+		{
+		    result = matcher.group();
+		}
+		else
+		{
+		    result = result + "," + matcher.group();
+		}
+	    }
+	    return result;
+	}
+
+	public static String junitAndMockito_ch3Q2_reverse(String word) {
 		Objects.requireNonNull(word);
 		
 		Stack<Character> stack = new Stack<>();
@@ -4544,5 +4601,7 @@ public class Root {
 				&& w.substring(1, w.length() - 1).codePoints()
 						.allMatch(x -> Character.isJavaIdentifierPart(x));
 	}
+	
+	
 
 }
