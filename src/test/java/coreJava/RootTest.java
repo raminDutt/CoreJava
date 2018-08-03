@@ -14,6 +14,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import static org.mockito.Mockito.*;
 
 @RunWith(JUnitParamsRunner.class)
 public class RootTest {
@@ -245,6 +246,18 @@ public class RootTest {
 	Assert.assertNotEquals(0, map.size());
 	map.clear();
 	Assert.assertEquals(0, map.size());
+
+    }
+    
+    @Test
+    public void f()
+    {
+	Employee employee = mock(Employee.class);
+	System.out.println(employee.getName());
+	when(employee.getAge()).thenReturn(20);
+	when(employee.getName()).thenReturn("SAN FRAN");
+	System.out.println(employee.getAge());
+	System.out.println(employee.getName());
 
     }
 
