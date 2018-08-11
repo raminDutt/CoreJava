@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.Arrays;
 
-import annotationProcessor.Todo;
+import annotations.Serializable;
+import annotations.Todo;
+import annotations.Transient;
 
 @Serializable
 public class Point implements Cloneable {

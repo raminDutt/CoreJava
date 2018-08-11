@@ -6,15 +6,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.logging.Logger;
 import java.util.Set;
-
-import com.sun.tools.javac.code.Attribute.Array;
+import java.util.logging.Logger;
 
 public class RaceResultService {
 
     private Map<Client, Set<RaceCategory>> clients = new HashMap<>();
-    Logger logger = Logger.getLogger(RaceResultsServiceTest.class.getName());
+    Logger logger = Logger.getLogger(RaceResultService.class.getName());
 
     public void subscribe(Client client) {
 

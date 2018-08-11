@@ -4,9 +4,11 @@ import java.util.Objects;
 
 import annotationProcessor.JavaDocProcessor.Param;
 import annotationProcessor.JavaDocProcessor.Return;
-import annotationProcessor.Resource;
 import annotationProcessor.TestCaseProcessor.TestCase;
-import annotationProcessor.Todo;
+import annotations.Resource;
+import annotations.Serializable;
+import annotations.Todo;
+import annotations.Transient;
 
 @Todo(message = "Reminder message 2", description = "Item class")
 @Todo(message = "Reminder message 3", description = "Item class")

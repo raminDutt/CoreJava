@@ -1,5 +1,7 @@
 package coreJava;
 
+import annotations.Serializable;
+
 @Serializable
 public class Line {
 	

@@ -83,6 +83,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Queue;
 import java.util.Random;
 import java.util.ResourceBundle;
@@ -136,16 +137,91 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 
 import annotationProcessor.JavaDocProcessor.Param;
 import annotationProcessor.JavaDocProcessor.Return;
-import annotationProcessor.Resource;
-import annotationProcessor.TestCaseEnigma;
 import annotationProcessor.TestCaseProcessor.TestCase;
-import annotationProcessor.Todo;
+import annotations.Cloneable2;
+import annotations.Resource;
+import annotations.TestCaseEnigma;
+import annotations.Todo;
 import framework.IPlugin;
 
 public class Root {
 
     public static void main(String args[]) throws Exception {
-	System.out.println(Logger.getGlobal().getParent().getLevel());
+	
+	ch11q2();
+	
+
+    }
+
+    public void mergeSort(int[] array) {
+	mergeSort(array, 0, array.length - 1);
+
+    }
+
+    private void mergeSort(int[] array, int p, int r) {
+
+	if (p == r) {
+	    return;
+	}
+	int q = (p + r) / 2;
+	int z = q + 1;
+	int w = r + 1;
+	mergeSort(array, p, q);
+	mergeSort(array, z, r);
+
+	int[] lowHalf = Arrays.copyOfRange(array, p, z);
+	int[] highHalf = Arrays.copyOfRange(array, z, w);
+
+	int k = p;
+	int i = 0;
+	int j = 0;
+	while (k < w) {
+
+	    if (i == lowHalf.length) {
+		array[k] = highHalf[j];
+		j++;
+	    } else {
+		if (j == highHalf.length) {
+		    array[k] = lowHalf[i];
+		    i++;
+		} else {
+		    if (lowHalf[i] < highHalf[j]) {
+			array[k] = lowHalf[i];
+			i++;
+		    } else {
+			array[k] = highHalf[j];
+			j++;
+		    }
+		}
+	    }
+	    k++;
+	    /*- //Implementation 2
+	     * if (lowHalf[i] < highHalf[j]) {
+	    array[k] = lowHalf[i];
+	    i++;
+	    } else {
+	    array[k] = highHalf[j];
+	    j++;
+	    k++;
+	    }
+
+	    if (i == lowHalf.length) {
+	    while (j < highHalf.length && k < w) {
+	        array[k] = highHalf[j];
+	        j++;
+	        k++;
+	    }
+	    }
+
+	    if (j == highHalf.length) {
+	    while (i < lowHalf.length && k < w) {
+	        array[k] = lowHalf[i];
+	        i++;
+	        k++;
+	    }
+	    }
+	     */
+	}
 
     }
 
@@ -198,7 +274,20 @@ public class Root {
 
     public static String junitAndMockito_ch3Q2_reverse(String word) {
 	Objects.requireNonNull(word);
+	
 
+	boolean isValidInput = word.codePoints().anyMatch(codePoint -> {
+	    if(codePoint<32 || codePoint >=127)
+	    {
+		return false;
+	    }
+	    return true;
+	});
+	
+	if(!isValidInput && !word.isEmpty())
+	{
+	    throw new IllegalArgumentException();
+	}
 	Stack<Character> stack = new Stack<>();
 	int length = word.length();
 
@@ -4591,6 +4680,18 @@ public class Root {
 	return Character.isJavaIdentifierStart(w.charAt(0))
 		&& w.substring(1, w.length() - 1).codePoints()
 			.allMatch(x -> Character.isJavaIdentifierPart(x));
+    }
+
+    public String getUerFromDB(Map<String, Integer> map) {
+	Map<String, Integer> map2 = new HashMap<>();
+	Map<? extends String, ? extends Integer> map3 = map2;
+
+	return "not yet implemented";
+
+    }
+
+    public static <T> T somef() {
+	return null;
     }
 
 }

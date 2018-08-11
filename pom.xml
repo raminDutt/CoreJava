@@ -45,8 +45,20 @@
 			<artifactId>junit</artifactId>
 			<version>4.12</version>
 			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>org.hamcrest</groupId>
+					<artifactId>hamcrest-core</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
-
+		<!--hamcrest -->
+		<dependency>
+			<groupId>org.hamcrest</groupId>
+			<artifactId>hamcrest-library</artifactId>
+			<version>1.3</version>
+			<scope>test</scope>
+		</dependency>
 		<!-- JunitParams -->
 		<dependency>
 			<groupId>pl.pragmatists</groupId>
@@ -54,6 +66,44 @@
 			<version>1.1.1</version>
 			<scope>test</scope>
 		</dependency>
+
+		<!-- catch-exception -->
+		<dependency>
+			<groupId>eu.codearte.catch-exception</groupId>
+			<artifactId>catch-exception</artifactId>
+			<version>1.4.6</version>
+			<scope>test</scope> <!-- test scope to use it only in tests -->
+		</dependency>
+
+		<!-- catch-throwable -->
+		<dependency>
+			<groupId>eu.codearte.catch-exception</groupId>
+			<artifactId>catch-throwable</artifactId>
+			<version>1.4.6</version>
+			<scope>test</scope> <!-- test scope to use it only in tests -->
+		</dependency>
+
+
+		<!-- FEST Fluent Assertions matchers (Depreactaed) -->
+		<!-- <dependency> <groupId>org.easytesting</groupId> <artifactId>fest-assert-core</artifactId> 
+			<version>2.0M10</version> </dependency> -->
+
+		<!-- AssertJ -->
+		<dependency>
+			<groupId>org.assertj</groupId>
+			<artifactId>assertj-core</artifactId>
+			<!-- use 2.9.1 for Java 7 projects -->
+			<version>3.10.0</version>
+			<scope>test</scope>
+		</dependency>
+		<!-- tempus-fugit -->
+		<dependency>
+			<groupId>com.google.code.tempus-fugit</groupId>
+			<artifactId>tempus-fugit</artifactId>
+			<version>1.1</version>
+		</dependency>
+
+
 		<!-- Annotation processor -->
 		<dependency>
 			<groupId>annotation</groupId>

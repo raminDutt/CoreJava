@@ -1,26 +1,47 @@
 package coreJava;
 
+//import static org.fest.assertions.api.Assertions.*;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+//import static org.assertj.core.api.Assertions.*;
+
+
+
+
+
+
+
+
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
+import java.util.Random;
 
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 
-import org.apache.http.annotation.Experimental;
-import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
+import org.junit.rules.Timeout;
 import org.junit.runner.RunWith;
-import static org.mockito.Mockito.*;
+
+import annotations.RetryTest;
+import rules.PreserveSystemPropertiesRules;
+import rules.RetryTestRule;
+
 
 @RunWith(JUnitParamsRunner.class)
 public class RootTest {
 
     private static final Object[] parametersForTestJunitAndMockito_ch4Q2_getNumberTesCase2() {
-	//regex: [^\D]*\d\d\d+[^\D]*
+	// regex: [^\D]*\d\d\d+[^\D]*
 	return new Object[] {
 		new Object[] { "123", "123" },
 		new Object[] { "1234", "1234" },
@@ -50,7 +71,7 @@ public class RootTest {
 		"Black Box partition testing for inputs that should generate an output String number",
 		expected, Root.junitAndMockito_ch4Q2_getNumber(input));
     }
-    
+
     private static final Object[] parametersForTestJunitAndMockito_ch4Q2_getNumberTesCase1() {
 	// The partition: Character, special character, white space, empty
 	// String (BV), 2 digits only, (2 digits + white space)*
@@ -190,20 +211,57 @@ public class RootTest {
 		new Object[] { "poffy", "yffop" },
 		new Object[] { "java", "avaj" },
 		new Object[] { "San Fransisco", "ocsisnarF naS" },
-		new Object[] { "San Jose", "esoJ naS" }, };
+		new Object[] { "San Jose", "esoJ naS" },
+		new Object[] { "ramin", "nimar" },
+		new Object[] { "poffy", "yffop" },
+		new Object[] { "", "" },
+		new Object[] { "aaba", "abaa" },
+		new Object[] { "r a", "a r" },
+		new Object[] { "   ", "   " },
+		new Object[] { "\\r", "r\\" },
+		new Object[] { "123", "321" },
+		new Object[] { "\'sd", "ds\'" },
+		new Object[] { "\"df", "fd\"" },
+		new Object[] { "~!@#$%^&*()", ")(*&^%$#@!~" },
+		new Object[] { "pof12fy", "yf21fop" },
+		new Object[] { "pof~!@#$%^&*()fy", "yf)(*&^%$#@!~fop" },
+		new Object[] {
+			"po123456789/*f~!@#$%^&*()fy",
+			"yf)(*&^%$#@!~f*/987654321op" } };
 	return words;
     }
 
-    // Excercise 3.11.2
+    // Excercise 3.11.2 + 6.15.1
     @Test
     @Parameters(method = "getWords")
     public void testJunitAndMockito_ch3Q2_Reversed(String word, String reversed) {
-	Assert.assertEquals(Root.junitAndMockito_ch3Q2_reverse(word), reversed);
+	assertThat(Root.junitAndMockito_ch3Q2_reverse(word))
+		.isEqualTo(reversed);
     }
 
     @Test(expected = NullPointerException.class)
     public void testJunitAndMockito_ch3Q2_nullWord() {
 	Root.junitAndMockito_ch3Q2_reverse(null);
+    }
+
+    private static final Object[] parametersForTestJunitAndMockito_ch3Q2_invalidInput() {
+	return new Object[] {
+		new Object[] { "\u0000" },
+		new Object[] { "\t" },
+		new Object[] { "\n" },
+		new Object[] { "\r" },
+		new Object[] { "\f" },
+		new Object[] { "\b" },
+		new Object[] { "\r" },
+		new Object[] { "\r" },
+		new Object[] { "\u001F" },
+		new Object[] { "\u007F"} };
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @Parameters
+    public void testJunitAndMockito_ch3Q2_invalidInput(String word) {
+	Root.junitAndMockito_ch3Q2_reverse(word);
     }
 
     private static final Object[] parametersForTestJunitAndMockito_ch3Q3_PutAndGet() {
@@ -248,10 +306,9 @@ public class RootTest {
 	Assert.assertEquals(0, map.size());
 
     }
-    
+
     @Test
-    public void f()
-    {
+    public void f() {
 	Employee employee = mock(Employee.class);
 	System.out.println(employee.getName());
 	when(employee.getAge()).thenReturn(20);
@@ -260,5 +317,58 @@ public class RootTest {
 	System.out.println(employee.getName());
 
     }
+
+    @Test
+    public void testMergeSort() {
+
+	Root root = new Root();
+	Random generator = new Random();
+
+	int[] arrayTobeSorted = generator.ints(-100, 100).limit(6).toArray();
+	int[] expectedArray = Arrays.copyOf(arrayTobeSorted,
+		arrayTobeSorted.length);
+	Arrays.sort(expectedArray);
+	root.mergeSort(arrayTobeSorted);
+	assertThat(arrayTobeSorted).as("Checking merge Sort array output")
+		.isEqualTo(expectedArray);
+    }
+    
+    @Rule
+    public PreserveSystemPropertiesRules preserveSystemPropertiesRules = new PreserveSystemPropertiesRules();
+
+    @Test
+    public void f1()
+    {
+	Properties properties = System.getProperties();
+	System.out.println("f1: before = " + properties.getProperty("user.name"));
+	properties.setProperty("user.name", "poffyyyyyyy");
+	System.out.println("f1: after = " + properties.getProperty("user.name"));
+	
+
+    }
+    
+    @Test
+    public void f2()
+    {
+	Properties properties = System.getProperties();
+	System.out.println("f2: after = " + properties.getProperty("user.name"));
+	
+
+    }
+    
+    @Rule
+    public TestName name= new TestName();
+    @Rule
+    public RetryTestRule retryTestRule = new RetryTestRule();
+    
+    @Test
+    @RetryTest(retryNb=5)
+    public void ch6_15_8()
+    {
+	fail(name.getMethodName() + " failled");
+    }
+    
+    
+    
 
 }

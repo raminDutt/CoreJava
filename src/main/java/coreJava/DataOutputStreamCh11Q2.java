@@ -22,6 +22,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import annotationProcessor.JavaDocProcessor.Param;
+import annotations.Serializable;
+import annotations.Transient;
 
 public class DataOutputStreamCh11Q2 {
 
