@@ -149,7 +149,7 @@ public class Root {
     public static void main(String args[]) throws Exception {
 	
 	ch11q2();
-	
+
 
     }
 
@@ -4693,5 +4693,53 @@ public class Root {
     public static <T> T somef() {
 	return null;
     }
+    
+    
+    
+    public void quickSort(int array[])
+    {
+	quickSort(array, 0, array.length-1);
+
+    }
+    
+    public void quickSort(int[]array, int p,int r)
+    {
+	if(r <= p)
+	{
+	    return;
+	}
+	
+	int q = partition(array,p,r);
+	quickSort(array, p, q-1);
+	quickSort(array, q+1,r);
+	
+    }
+
+    private int partition(int[] array, int p, int r) {
+
+	int pivot = array[r];
+	int i = r-1;
+	while(i >= p)
+	{
+	    int temp = array[i];
+	    if(temp > pivot)
+	    {
+		int j = i;
+		while(j < r)
+		{
+		    array[j] = array[j+1];
+		    j++;
+		}
+		array[r]=temp;
+		r = r-1;
+		
+	    }
+	    i--;
+	}
+	
+	return r;
+    }
+    
+    
 
 }

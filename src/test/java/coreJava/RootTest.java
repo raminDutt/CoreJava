@@ -15,15 +15,21 @@ import static org.mockito.Mockito.when;
 
 
 
+
+
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
+import java.util.function.IntSupplier;
+import java.util.stream.IntStream;
 
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 
+import org.assertj.core.api.Assertions;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -369,6 +375,17 @@ public class RootTest {
     }
     
     
-    
+    @Test
+    public void testQuickSort()
+    {
+	Root root = new Root();
+	//Random
+	int[] actual = IntStream.generate(() -> new Random().nextInt(100)).limit(10).toArray();
+	int[] expected = Arrays.copyOf(actual, actual.length);
+	Arrays.sort(expected);
+	root.quickSort(actual);
+	Assertions.assertThat(actual).isEqualTo(expected);
+
+    }
 
 }

@@ -21,6 +21,11 @@ import com.google.code.tempusfugit.concurrency.annotations.Repeating;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AtomicIdGeneratorTest {
 
+    
+    public AtomicIdGeneratorTest()
+    {
+	System.out.println("Constructor");
+    }
     @Rule
     public ConcurrentRule concurrentRule = new ConcurrentRule();
 
@@ -32,8 +37,8 @@ public class AtomicIdGeneratorTest {
     public static int count = 0;
 
     @Test
-    @Concurrent(count = 10)
-    @Repeating(repetition = 100)
+    //@Concurrent(count = 10)
+    //@Repeating(repetition = 100)
     public void testIdIsUnique() {
 
 	int nextId = AtomicIdGenerator.nextId();
