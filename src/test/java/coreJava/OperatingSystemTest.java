@@ -21,7 +21,7 @@ public class OperatingSystemTest {
 	operatingSystem.setReleaseYear(2018);
 	operatingSystem.setVersion("1803");
 	assertThat(operatingSystem).is128bit().wasReleasedIn(2018).hasVersion("1803");
-	assertThat(operatingSystem).is64bit();
+	//assertThat(operatingSystem).is64bit();
 
 	
     }

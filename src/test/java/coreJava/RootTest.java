@@ -8,16 +8,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 //import static org.assertj.core.api.Assertions.*;
 
-
-
-
-
-
-
-
-
-
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,16 +22,21 @@ import junitparams.Parameters;
 import org.assertj.core.api.Assertions;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 import org.junit.rules.Timeout;
 import org.junit.runner.RunWith;
 
+import com.google.code.tempusfugit.concurrency.ConcurrentRule;
+import com.google.code.tempusfugit.concurrency.RepeatingRule;
+import com.google.code.tempusfugit.concurrency.annotations.Concurrent;
+import com.google.code.tempusfugit.concurrency.annotations.Repeating;
+
 import annotations.RetryTest;
 import rules.PreserveSystemPropertiesRules;
 import rules.RetryTestRule;
-
 
 @RunWith(JUnitParamsRunner.class)
 public class RootTest {
@@ -261,7 +256,7 @@ public class RootTest {
 		new Object[] { "\r" },
 		new Object[] { "\r" },
 		new Object[] { "\u001F" },
-		new Object[] { "\u007F"} };
+		new Object[] { "\u007F" } };
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -316,15 +311,67 @@ public class RootTest {
     @Test
     public void f() {
 	Employee employee = mock(Employee.class);
-	System.out.println(employee.getName());
+	//System.out.println(employee.getName());
 	when(employee.getAge()).thenReturn(20);
 	when(employee.getName()).thenReturn("SAN FRAN");
-	System.out.println(employee.getAge());
-	System.out.println(employee.getName());
+	//System.out.println(employee.getAge());
+	//System.out.println(employee.getName());
+
+    }
+
+    @Rule
+    public PreserveSystemPropertiesRules preserveSystemPropertiesRules = new PreserveSystemPropertiesRules();
+
+    @Test
+    public void f1() {
+	Properties properties = System.getProperties();
+	//System.out.println("f1: before = "
+	//	+ properties.getProperty("user.name"));
+	properties.setProperty("user.name", "poffyyyyyyy");
+	//System.out
+	//	.println("f1: after = " + properties.getProperty("user.name"));
 
     }
 
     @Test
+    public void f2() {
+	Properties properties = System.getProperties();
+	/*System.out
+		.println("f2: after = " + properties.getProperty("user.name"));*/
+
+    }
+
+    @Rule
+    public TestName name = new TestName();
+    @Rule
+    public RetryTestRule retryTestRule = new RetryTestRule();
+
+    @Ignore
+    @Test
+    @RetryTest(retryNb = 5)
+    public void ch6_15_8() {
+	fail(name.getMethodName() + " failled");
+    }
+
+    @Rule
+    public RepeatingRule repeatingRule = new RepeatingRule();
+
+    @Test
+    @Repeating(repetition = 100)
+    public void testQuickSort() {
+	Root root = new Root();
+	// Random
+	int[] actual = IntStream.generate(() -> new Random().nextInt(100))
+		.limit(10).toArray();
+	int[] expected = Arrays.copyOf(actual, actual.length);
+	Arrays.sort(expected);
+	root.quickSort(actual);
+	Assertions.assertThat(actual).isEqualTo(expected);
+
+    }
+
+    @Test
+    @Repeating(repetition = 100)
     public void testMergeSort() {
 
 	Root root = new Root();
@@ -338,54 +385,38 @@ public class RootTest {
 	assertThat(arrayTobeSorted).as("Checking merge Sort array output")
 		.isEqualTo(expectedArray);
     }
-    
-    @Rule
-    public PreserveSystemPropertiesRules preserveSystemPropertiesRules = new PreserveSystemPropertiesRules();
 
     @Test
-    public void f1()
-    {
-	Properties properties = System.getProperties();
-	System.out.println("f1: before = " + properties.getProperty("user.name"));
-	properties.setProperty("user.name", "poffyyyyyyy");
-	System.out.println("f1: after = " + properties.getProperty("user.name"));
+    @Repeating(repetition=100)
+    public void testBinarySearch() {
+	int length = 100;
+	int[] array = IntStream.generate(() -> {
+	    Random random = new Random();
+	    int nextInt = random.nextInt(200) - 100;
+	    return nextInt;
+	}).limit(length).toArray();
+	Arrays.sort(array);
 	
-
-    }
-    
-    @Test
-    public void f2()
-    {
-	Properties properties = System.getProperties();
-	System.out.println("f2: after = " + properties.getProperty("user.name"));
 	
-
-    }
-    
-    @Rule
-    public TestName name= new TestName();
-    @Rule
-    public RetryTestRule retryTestRule = new RetryTestRule();
-    
-    @Test
-    @RetryTest(retryNb=5)
-    public void ch6_15_8()
-    {
-	fail(name.getMethodName() + " failled");
-    }
-    
-    
-    @Test
-    public void testQuickSort()
-    {
+	int searchValue = new Random().nextInt(200)-100;
+	int expected = Arrays.binarySearch(array, searchValue);
+	if(expected <0)
+	{
+	    expected = -1;
+	}
 	Root root = new Root();
-	//Random
-	int[] actual = IntStream.generate(() -> new Random().nextInt(100)).limit(10).toArray();
-	int[] expected = Arrays.copyOf(actual, actual.length);
-	Arrays.sort(expected);
-	root.quickSort(actual);
-	Assertions.assertThat(actual).isEqualTo(expected);
-
+	int actual = root.binarySearch(array, searchValue);
+	Assertions
+		.assertThat(actual)
+		.as("Array: " + Arrays.toString(array) + "\nSearchValue: "
+			+ searchValue + "\nExpected: " + expected)
+		.isEqualTo(expected);
     }
+    
+    @Test
+    public void testFail() {
+	Assert.fail();
+    }
+    
 
 }

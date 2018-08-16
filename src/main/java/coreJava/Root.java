@@ -128,7 +128,10 @@ import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
 
+import listener.TimeTestListener;
+
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
+import org.junit.runner.JUnitCore;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -147,18 +150,12 @@ import framework.IPlugin;
 public class Root {
 
     public static void main(String args[]) throws Exception {
-	
-	ch11q2();
 
 
-    }
-
-    public void mergeSort(int[] array) {
-	mergeSort(array, 0, array.length - 1);
 
     }
 
-    private void mergeSort(int[] array, int p, int r) {
+    private void mergeSortBck(int[] array, int p, int r) {
 
 	if (p == r) {
 	    return;
@@ -166,8 +163,8 @@ public class Root {
 	int q = (p + r) / 2;
 	int z = q + 1;
 	int w = r + 1;
-	mergeSort(array, p, q);
-	mergeSort(array, z, r);
+	mergeSortBck(array, p, q);
+	mergeSortBck(array, z, r);
 
 	int[] lowHalf = Arrays.copyOfRange(array, p, z);
 	int[] highHalf = Arrays.copyOfRange(array, z, w);
@@ -274,18 +271,15 @@ public class Root {
 
     public static String junitAndMockito_ch3Q2_reverse(String word) {
 	Objects.requireNonNull(word);
-	
 
 	boolean isValidInput = word.codePoints().anyMatch(codePoint -> {
-	    if(codePoint<32 || codePoint >=127)
-	    {
+	    if (codePoint < 32 || codePoint >= 127) {
 		return false;
 	    }
 	    return true;
 	});
-	
-	if(!isValidInput && !word.isEmpty())
-	{
+
+	if (!isValidInput && !word.isEmpty()) {
 	    throw new IllegalArgumentException();
 	}
 	Stack<Character> stack = new Stack<>();
@@ -875,48 +869,6 @@ public class Root {
 	}
 
 	System.out.println(Arrays.toString(array));
-    }
-
-    private static void selectionSort() {
-	Random generator = new Random();
-	int[] array = generator.ints(0, 100).limit(1000).toArray();
-	int[] copyArray = Arrays.copyOf(array, array.length);
-
-	int size = array.length;
-	int i = 0;
-	long start = System.currentTimeMillis();
-	int count = 0;
-	while (i < size) {
-	    int min_index = i;
-	    int min = array[i];
-	    int j = i;
-	    while (j < size) {
-		if (array[j] < min) {
-		    min_index = j;
-		    min = array[min_index];
-		}
-		count++;
-		j++;
-	    }
-	    int temp = array[i];
-	    array[i] = array[min_index];
-	    array[min_index] = temp;
-	    i++;
-	}
-	long end = System.currentTimeMillis();
-	System.out.println("Selection sort: " + Math.subtractExact(end, start)
-		+ "ms");
-	System.out.println(Arrays.toString(array));
-	System.out.println("Count " + count);
-
-	long start1 = System.currentTimeMillis();
-	int raminCount = raminSelectionSort(copyArray);
-	long end1 = System.currentTimeMillis();
-	System.out.println(Arrays.toString(copyArray));
-	System.out.println(raminCount);
-	System.out.println("raminSelectionSort : "
-		+ Math.subtractExact(end1, start1) + "ms");
-
     }
 
     private static void ch12Q12() {
@@ -4693,53 +4645,130 @@ public class Root {
     public static <T> T somef() {
 	return null;
     }
-    
-    
-    
-    public void quickSort(int array[])
-    {
-	quickSort(array, 0, array.length-1);
 
+    public void quickSort(int[] array) {
+
+	quickSort(array, 0, array.length - 1);
     }
-    
-    public void quickSort(int[]array, int p,int r)
-    {
-	if(r <= p)
-	{
+
+    private void quickSort(int[] array, int p, int r) {
+	if (r <= p) {
 	    return;
 	}
-	
-	int q = partition(array,p,r);
-	quickSort(array, p, q-1);
-	quickSort(array, q+1,r);
-	
+	int q = partition(array, p, r);
+	quickSort(array, p, q - 1);
+	quickSort(array, q + 1, r);
     }
 
     private int partition(int[] array, int p, int r) {
 
+	int i = p - 1;
+	int j = p - 1;
 	int pivot = array[r];
-	int i = r-1;
-	while(i >= p)
-	{
-	    int temp = array[i];
-	    if(temp > pivot)
-	    {
-		int j = i;
-		while(j < r)
-		{
-		    array[j] = array[j+1];
-		    j++;
-		}
-		array[r]=temp;
-		r = r-1;
-		
+	while (p < r) {
+	    int z = array[p];
+	    if (z >= pivot) {
+		j++;
+	    } else {
+		i++;
+		j++;
+		swap(array, i, j);
 	    }
-	    i--;
+
+	    p++;
 	}
-	
-	return r;
+	int q = i + 1;
+	swap(array, q, r);
+	return q;
     }
-    
-    
+
+    private void swap(int[] array, int q, int r) {
+	int temp = array[q];
+	array[q] = array[r];
+	array[r] = temp;
+
+    }
+
+    public void mergeSort(int[] array) {
+
+	mergeSort(array, 0, array.length - 1);
+    }
+
+    private void mergeSort(int[] array, int p, int r) {
+
+	if (r == p) {
+	    return;
+	}
+
+	int q = (p + r) / 2;
+	mergeSort(array, p, q);
+	mergeSort(array, q + 1, r);
+
+	merge(array, p, r);
+    }
+
+    private void merge(int[] array, int p, int r) {
+	int q = (p + r) / 2;
+	int[] lhs = Arrays.copyOfRange(array, p, q + 1);
+	int[] rhs = Arrays.copyOfRange(array, q + 1, r + 1);
+
+	int i = 0;
+	int j = 0;
+	while (p <= r) {
+	    if (lhs[i] < rhs[j]) {
+		array[p] = lhs[i];
+		i++;
+		p++;
+	    } else {
+		array[p] = rhs[j];
+		j++;
+		p++;
+	    }
+
+	    if (i == lhs.length) {
+		while (j < rhs.length) {
+		    array[p] = rhs[j];
+		    j++;
+		    p++;
+		}
+	    }
+
+	    if (j == rhs.length) {
+		while (i < lhs.length) {
+		    array[p] = lhs[i];
+		    i++;
+		    p++;
+		}
+	    }
+	}
+    }
+
+    public int binarySearch(int[] array, int searchValue) {
+
+	return binarySearch(array, searchValue, 0, array.length-1);
+    }
+
+    private int binarySearch(int[] array, int searchValue, int p, int r) {
+	int q = (p + r) / 2;
+	int z = array[q];
+	if ( z == searchValue) {
+	    return q;
+	}
+
+	if (r <= p) {
+	    return -1;
+	}
+
+
+	if(z < searchValue)
+	{
+	    return binarySearch(array, searchValue, q+1, r);
+	}
+	else
+	{
+	    return binarySearch(array, searchValue, p, q-1);
+	}
+
+    }
 
 }
