@@ -2,14 +2,11 @@ package listener;
 
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 import org.junit.runner.Description;
 import org.junit.runner.Result;
@@ -20,7 +17,7 @@ public class TimeTestListener extends RunListener {
 
     private static class Node {
 	boolean faillure = false;
-	String className = null;
+	//String className = null;
 	LocalTime start_time = null;
 	LocalTime end_time = null;
     }
@@ -66,6 +63,7 @@ public class TimeTestListener extends RunListener {
 
     }
 
+    @Override
     public void testStarted(Description description) throws Exception {
 	Node node = new Node();
 	node.start_time = LocalTime.now();
@@ -79,9 +77,14 @@ public class TimeTestListener extends RunListener {
 	node.end_time = LocalTime.now();
     }
 
+    @Override
     public void testFailure(Failure failure) throws Exception {
 	Node node = map.get(failure.getDescription().getDisplayName());
 	node.faillure = true;
     }
+    
+    
+    
+
 
 }

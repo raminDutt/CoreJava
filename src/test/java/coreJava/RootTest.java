@@ -414,8 +414,29 @@ public class RootTest {
     }
     
     @Test
-    public void testFail() {
-	Assert.fail();
+    @Repeating(repetition=100)
+    public void testSelectionSort() {
+	int[] expected = IntStream.generate(() -> {
+	   return new Random().nextInt(200)-100;
+	}).limit(50).toArray();
+	
+	int[] actual = Arrays.copyOf(expected, expected.length);
+	Arrays.sort(expected);
+	Root root = new Root();
+	root.selectionSort(actual);
+	Assertions.assertThat(actual).isEqualTo(expected);
+    }
+    
+    @Test
+    @Repeating(repetition=100)
+    public void testInsertionSort()
+    {
+	Random random = new Random();
+	int[] expected = random.ints(-100, 100).limit(10).toArray();
+	int[] actual = Arrays.copyOf(expected, expected.length);	
+	Arrays.sort(expected);
+	new Root().insertionSort(actual);
+	assertThat(actual).isEqualTo(expected);
     }
     
 

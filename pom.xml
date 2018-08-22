@@ -12,7 +12,15 @@
 	<properties>
 		<powermock.version>1.7.1</powermock.version>
 	</properties>
+
 	<dependencies>
+		<!-- Cobertura -->
+		<dependency>
+			<groupId>org.codehaus.mojo</groupId>
+			<artifactId>cobertura-maven-plugin</artifactId>
+			<version>2.7</version>
+			<scope>test</scope>
+		</dependency>
 		<!-- Framework -->
 		<dependency>
 			<groupId>Framework</groupId>
@@ -244,6 +252,32 @@
 					</properties>
 				</configuration>
 			</plugin>
+			<!-- Mutation Testing: PIT http://pitest.org/quickstart/maven/ -->
+			<plugin>
+				<groupId>org.pitest</groupId>
+				<artifactId>pitest-maven</artifactId>
+				<version>1.4.2</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>mutationCoverage </goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>cobertura-maven-plugin</artifactId>
+				<version>2.7</version>
+				<executions>
+					<execution>
+						<phase>verify</phase>
+						<goals>
+							<goal>cobertura</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 		<resources>
 			<resource>
@@ -251,6 +285,15 @@
 			</resource>
 		</resources>
 	</build>
+	<reporting>
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>cobertura-maven-plugin</artifactId>
+				<version>2.7</version>
+			</plugin>
+		</plugins>
+	</reporting>
 </project>
 
 

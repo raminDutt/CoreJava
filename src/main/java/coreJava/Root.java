@@ -83,12 +83,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.Queue;
 import java.util.Random;
 import java.util.ResourceBundle;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.Stack;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.Vector;
@@ -118,8 +118,6 @@ import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -128,10 +126,7 @@ import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
 
-import listener.TimeTestListener;
-
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
-import org.junit.runner.JUnitCore;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -151,7 +146,7 @@ public class Root {
 
     public static void main(String args[]) throws Exception {
 
-
+	State state = new State(State.Case.CANCELLED);
 
     }
 
@@ -4745,13 +4740,13 @@ public class Root {
 
     public int binarySearch(int[] array, int searchValue) {
 
-	return binarySearch(array, searchValue, 0, array.length-1);
+	return binarySearch(array, searchValue, 0, array.length - 1);
     }
 
     private int binarySearch(int[] array, int searchValue, int p, int r) {
 	int q = (p + r) / 2;
 	int z = array[q];
-	if ( z == searchValue) {
+	if (z == searchValue) {
 	    return q;
 	}
 
@@ -4759,14 +4754,59 @@ public class Root {
 	    return -1;
 	}
 
-
-	if(z < searchValue)
-	{
-	    return binarySearch(array, searchValue, q+1, r);
+	if (z < searchValue) {
+	    return binarySearch(array, searchValue, q + 1, r);
+	} else {
+	    return binarySearch(array, searchValue, p, q - 1);
 	}
-	else
-	{
-	    return binarySearch(array, searchValue, p, q-1);
+
+    }
+
+    public void selectionSort(int[] actual) {
+
+	int i = 0;
+	int size = actual.length;
+
+	while (i < size) {
+	    int minIndex = i;
+	    int min = actual[minIndex];
+
+	    int j = i;
+	    while (j < size) {
+		if (actual[j] < min) {
+		    min = actual[j];
+		    minIndex = j;
+		}
+		j++;
+	    }
+	    actual[minIndex] = actual[i];
+	    actual[i] = min;
+
+	    i++;
+	}
+    }
+
+    public void insertionSort(int[] actual) {
+
+	int size = actual.length;
+	int i = 0;
+	while (i < size) {
+	    int j = i;
+	    int z = actual[j];
+	    while (j > 0) {
+		if(actual[j-1] > z)
+		{
+		    actual[j]=actual[j-1];
+		    j--;
+		}
+		else
+		{
+		    break;
+		}
+		
+	    }
+	    actual[j]=z;
+	    i++;
 	}
 
     }

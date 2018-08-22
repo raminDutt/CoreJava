@@ -1,50 +1,98 @@
 package coreJava;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.EmptyStackException;
 
-import javax.lang.model.element.Element;
 
 public class Stack<E> {
 
-	private List<E> stack;
-	
-	
-	public Stack()
+    int capacity;
+    int head;
+    Object[] objects = null;
+    E[] es = null;
+   
+    public Stack()
+    {
+	head=-1;
+	capacity=10;
+	objects = new Object[capacity];
+
+    }
+    
+
+    
+    public Stack(int capacity) {
+	head=-1;
+	this.capacity=capacity;
+	objects = new Object[capacity];
+    }
+    public int getCapacity() {
+
+	return objects.length;
+    }
+    public boolean empty() {
+
+	if(head < 0)
 	{
-		stack = new ArrayList<E>();
-		int x=10;
+	    return true;
 	}
-	
-	public static <V> Stack<V> getInstance()
+	return false;
+    }
+    public E push(E i) {
+
+	head++;
+	objects[head]=i;
+	return (E)objects[head];
+    }
+
+
+
+    public E pop() {
+
+	if(head < 0)
 	{
-		return new Stack<V>();
+	    throw new EmptyStackException();
 	}
+	E item = (E)objects[head];
+	head--;
+	return item;
+    }
+
+
+
+    public E peek() {
 	
-	public void push(E element)
+	if(head <= -1)
 	{
-		stack.add(element);
+	    throw new EmptyStackException();
 	}
+	return (E)objects[head];
+    }
+
+
+
+    public int size() {
+	int size = head+1;
+	return size;
+    }
+
+
+
+    public int search(E e) {
 	
-	public E pop()
+	int i = 0;
+	int size = objects.length;
+	
+	while(i<size)
 	{
-		if(isEmpty())
-		{
-			return null;
-		}
-		int index = stack.size()-1;
-		E element = stack.remove(index);
-		return element;
+	    E e2 = (E)objects[i];
+	    if(e.equals(e2))
+	    {
+		return i;
+	    }
+	    i++;
 	}
-	
-	public boolean isEmpty()
-	{
-		if(stack.size() == 0)
-		{
-			return true;
-		}
-		return false;
-	}
-	
+
+	return -1;
+    }
 	
 }
