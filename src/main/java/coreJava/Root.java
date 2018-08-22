@@ -3027,7 +3027,7 @@ public class Root {
 	String directory = "/home/ramin/workspace/ch10";
 	Path directoryPath = Paths.get(directory);
 
-	ConcurrentHashMap<String, Set<Path>> concurrentHashMap = new ConcurrentHashMap();
+	ConcurrentHashMap<String, Set<Path>> concurrentHashMap = new ConcurrentHashMap<>();
 	// Getting the list of all files
 	try (Stream<Path> files = Files.list(directoryPath);) {
 	    List<Callable<Void>> tasks = files.map(
@@ -4401,7 +4401,7 @@ public class Root {
 
 	// Methodology 1: accumulator
 	BinaryOperator<List<Integer>> accumulator = (x, y) -> {
-	    List<Integer> z = new ArrayList(x);
+	    List<Integer> z = new ArrayList<>(x);
 	    z.addAll(y);
 	    return z;
 	};
@@ -4421,7 +4421,7 @@ public class Root {
 	BinaryOperator<List<Integer>> combiner = (p, q) -> {
 	    System.out.println("p=" + p);
 	    System.out.println("q=" + q);
-	    List<Integer> r = new ArrayList(p);
+	    List<Integer> r = new ArrayList<>(p);
 	    r.addAll(q);
 	    return r;
 	};
