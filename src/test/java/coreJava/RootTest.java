@@ -8,15 +8,25 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 //import static org.assertj.core.api.Assertions.*;
 
+
+
+
+import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
+import java.util.function.BiFunction;
 import java.util.function.IntSupplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import junitparams.JUnitParamsRunner;
+import junitparams.NamedParameters;
 import junitparams.Parameters;
 
 import org.assertj.core.api.Assertions;
@@ -26,19 +36,30 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.junit.rules.Timeout;
 import org.junit.runner.RunWith;
+import org.mockito.AdditionalMatchers;
+import org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 
-import com.google.code.tempusfugit.concurrency.ConcurrentRule;
-import com.google.code.tempusfugit.concurrency.RepeatingRule;
-import com.google.code.tempusfugit.concurrency.annotations.Concurrent;
-import com.google.code.tempusfugit.concurrency.annotations.Repeating;
-
-import annotations.RetryTest;
 import rules.PreserveSystemPropertiesRules;
 import rules.RetryTestRule;
+import annotations.RetryTest;
 
-@RunWith(JUnitParamsRunner.class)
+import com.google.code.tempusfugit.concurrency.RepeatingRule;
+import com.google.code.tempusfugit.concurrency.annotations.Repeating;
+
+import coreJava.AdjacencyListGraph.BreadthFirstNode;
+import coreJava.AdjacencyListGraph.Node;
+
+//@RunWith(JUnitParamsRunner.class)
+
+@RunWith(PowerMockRunner.class)
+@PowerMockRunnerDelegate(JUnitParamsRunner.class)
+@PrepareForTest({ Root.class, int.class })
 public class RootTest {
 
     private static final Object[] parametersForTestJunitAndMockito_ch4Q2_getNumberTesCase2() {
@@ -311,11 +332,11 @@ public class RootTest {
     @Test
     public void f() {
 	Employee employee = mock(Employee.class);
-	//System.out.println(employee.getName());
+	// System.out.println(employee.getName());
 	when(employee.getAge()).thenReturn(20);
 	when(employee.getName()).thenReturn("SAN FRAN");
-	//System.out.println(employee.getAge());
-	//System.out.println(employee.getName());
+	// System.out.println(employee.getAge());
+	// System.out.println(employee.getName());
 
     }
 
@@ -325,19 +346,21 @@ public class RootTest {
     @Test
     public void f1() {
 	Properties properties = System.getProperties();
-	//System.out.println("f1: before = "
-	//	+ properties.getProperty("user.name"));
+	// System.out.println("f1: before = "
+	// + properties.getProperty("user.name"));
 	properties.setProperty("user.name", "poffyyyyyyy");
-	//System.out
-	//	.println("f1: after = " + properties.getProperty("user.name"));
+	// System.out
+	// .println("f1: after = " + properties.getProperty("user.name"));
 
     }
 
     @Test
     public void f2() {
 	Properties properties = System.getProperties();
-	/*System.out
-		.println("f2: after = " + properties.getProperty("user.name"));*/
+	/*
+	 * System.out .println("f2: after = " +
+	 * properties.getProperty("user.name"));
+	 */
 
     }
 
@@ -358,20 +381,6 @@ public class RootTest {
 
     @Test
     @Repeating(repetition = 100)
-    public void testQuickSort() {
-	Root root = new Root();
-	// Random
-	int[] actual = IntStream.generate(() -> new Random().nextInt(100))
-		.limit(10).toArray();
-	int[] expected = Arrays.copyOf(actual, actual.length);
-	Arrays.sort(expected);
-	root.quickSort(actual);
-	Assertions.assertThat(actual).isEqualTo(expected);
-
-    }
-
-    @Test
-    @Repeating(repetition = 100)
     public void testMergeSort() {
 
 	Root root = new Root();
@@ -387,7 +396,7 @@ public class RootTest {
     }
 
     @Test
-    @Repeating(repetition=100)
+    @Repeating(repetition = 100)
     public void testBinarySearch() {
 	int length = 100;
 	int[] array = IntStream.generate(() -> {
@@ -396,12 +405,10 @@ public class RootTest {
 	    return nextInt;
 	}).limit(length).toArray();
 	Arrays.sort(array);
-	
-	
-	int searchValue = new Random().nextInt(200)-100;
+
+	int searchValue = new Random().nextInt(200) - 100;
 	int expected = Arrays.binarySearch(array, searchValue);
-	if(expected <0)
-	{
+	if (expected < 0) {
 	    expected = -1;
 	}
 	Root root = new Root();
@@ -412,31 +419,864 @@ public class RootTest {
 			+ searchValue + "\nExpected: " + expected)
 		.isEqualTo(expected);
     }
-    
+
     @Test
-    @Repeating(repetition=100)
+    @Repeating(repetition = 100)
     public void testSelectionSort() {
 	int[] expected = IntStream.generate(() -> {
-	   return new Random().nextInt(200)-100;
+	    return new Random().nextInt(200) - 100;
 	}).limit(50).toArray();
-	
+
 	int[] actual = Arrays.copyOf(expected, expected.length);
 	Arrays.sort(expected);
 	Root root = new Root();
 	root.selectionSort(actual);
 	Assertions.assertThat(actual).isEqualTo(expected);
     }
-    
+
     @Test
-    @Repeating(repetition=100)
-    public void testInsertionSort()
-    {
+    @Repeating(repetition = 100)
+    public void testInsertionSort() {
 	Random random = new Random();
 	int[] expected = random.ints(-100, 100).limit(10).toArray();
-	int[] actual = Arrays.copyOf(expected, expected.length);	
+	int[] actual = Arrays.copyOf(expected, expected.length);
 	Arrays.sort(expected);
 	new Root().insertionSort(actual);
 	assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    @Repeating(repetition = 100)
+    public void testQuickSort() {
+	int[] expected = IntStream.generate(() -> {
+	    Random random = new Random();
+	    return random.nextInt(100);
+	}).limit(5).toArray();
+
+	int[] actual = Arrays.copyOf(expected, expected.length);
+	Arrays.sort(actual);
+
+	Root root = new Root();
+	root.quickSort(expected);
+	Assertions.assertThat(expected).isEqualTo(actual);
+    }
+
+    @Test
+    public void adjacencyListGraphShouldBeProperlyConstructed() {
+
+	AdjacencyListGraph graph = new AdjacencyListGraph();
+	graph.add(0, 1);
+	graph.add(1, 0);
+	graph.add(1, 4);
+	graph.add(1, 5);
+	graph.add(2, 4);
+	graph.add(2, 5);
+	graph.add(2, 3);
+	graph.add(3, 2);
+	graph.add(3, 6);
+	graph.add(4, 1);
+	graph.add(4, 2);
+	graph.add(5, 1);
+	graph.add(5, 2);
+	graph.add(5, 6);
+	graph.add(6, 5);
+	graph.add(6, 3);
+	graph.add(7, null);
+
+	Map<Integer, List<Node>> vertex = graph.getVertices();
+	Assertions.assertThat(vertex.get(0)).extracting("id").containsOnly(1);
+	Assertions.assertThat(vertex.get(1)).extracting("id")
+		.containsOnly(0, 4, 5);
+	Assertions.assertThat(vertex.get(2)).extracting("id")
+		.containsOnly(3, 4, 5);
+	Assertions.assertThat(vertex.get(3)).extracting("id")
+		.containsOnly(2, 6);
+	Assertions.assertThat(vertex.get(4)).extracting("id")
+		.containsOnly(1, 2);
+	Assertions.assertThat(vertex.get(5)).extracting("id")
+		.containsOnly(1, 2, 6);
+	Assertions.assertThat(vertex.get(6)).extracting("id")
+		.containsOnly(3, 5);
+	Assertions.assertThat(vertex.get(7)).extracting("id").containsNull();
+
+	BiFunction<Integer, Integer, Node[]> getNeighbor = (Integer vertexID,
+		Integer neighborId) -> {
+	    return vertex.get(vertexID).stream()
+		    .filter(node -> node.id == neighborId).toArray(Node[]::new);
+	};
+
+	Node[] neighbor1 = null;
+	Node[] neighbor2 = null;
+	Node[] neighbor3 = null;
+
+	neighbor1 = getNeighbor.apply(0, 1);
+	neighbor2 = getNeighbor.apply(4, 1);
+	Assertions.assertThat(neighbor1).doesNotContain(neighbor2);
+
+	neighbor1 = getNeighbor.apply(0, 1);
+	neighbor2 = getNeighbor.apply(5, 1);
+	Assertions.assertThat(neighbor1).doesNotContain(neighbor2);
+
+	neighbor1 = getNeighbor.apply(1, 4);
+	neighbor2 = getNeighbor.apply(2, 4);
+	Assertions.assertThat(neighbor1).doesNotContain(neighbor2);
+
+	neighbor1 = getNeighbor.apply(1, 5);
+	neighbor2 = getNeighbor.apply(6, 5);
+	neighbor3 = getNeighbor.apply(2, 5);
+	Assertions.assertThat(neighbor1).doesNotContain(neighbor2)
+		.doesNotContain(neighbor3);
+
+	neighbor1 = getNeighbor.apply(4, 2);
+	neighbor2 = getNeighbor.apply(5, 2);
+	neighbor3 = getNeighbor.apply(3, 2);
+	Assertions.assertThat(neighbor1).doesNotContain(neighbor2)
+		.doesNotContain(neighbor3);
+
+	neighbor1 = getNeighbor.apply(2, 3);
+	neighbor2 = getNeighbor.apply(6, 3);
+	Assertions.assertThat(neighbor1).doesNotContain(neighbor2);
+
+	neighbor1 = getNeighbor.apply(5, 6);
+	neighbor2 = getNeighbor.apply(3, 6);
+	Assertions.assertThat(neighbor1).doesNotContain(neighbor2);
+    }
+
+    @Test
+    public void adjacencyListGraphShouldReturnACopyOfVertices() {
+
+	AdjacencyListGraph graph = new AdjacencyListGraph();
+	graph.add(new Integer(0), 1);
+	graph.add(1, 0);
+	graph.add(1, 4);
+	graph.add(1, 5);
+	graph.add(2, 4);
+	graph.add(2, 5);
+	graph.add(3, 2);
+	graph.add(3, 6);
+	graph.add(4, 1);
+	graph.add(4, 2);
+	graph.add(5, 1);
+	graph.add(5, 2);
+	graph.add(5, 6);
+	graph.add(6, 5);
+	graph.add(6, 3);
+	graph.add(7, null);
+
+	Map<Integer, List<Node>> copy1 = graph.getVertices();
+	Map<Integer, List<Node>> copy2 = graph.getVertices();
+	assertThat(copy1).as("Copy1: " + copy1 + "\n" + "Copy2: " + copy2)
+		.isNotSameAs(copy2);
+
+	// Checking if keys are also not the same
+	copy1.keySet().forEach(copy1_key -> {
+
+	    copy2.keySet().forEach(copy2_key -> {
+		assertThat(copy1_key).isNotSameAs(copy2_key);
+	    });
+	});
+
+	// Checking if values are also not the same
+	List<Node> copy1Values = copy1.values().stream()
+		.flatMap(list -> list.stream()).collect(Collectors.toList());
+	List<Node> copy2Values = copy2.values().stream()
+		.flatMap(list -> list.stream()).collect(Collectors.toList());
+
+	copy1Values.forEach(copy1Node -> {
+	    copy2Values.forEach(copy2Node -> {
+		assertThat(copy1Node).as(
+			"copy1Node=" + copy1Node + "\n" + "copy2Node="
+				+ copy2Node).isNotSameAs(copy2Node);
+	    });
+	});
+
+    }
+
+    @Test
+    public void shouldCreateBreadthFirstTable() {
+
+	AdjacencyListGraph graph = new AdjacencyListGraph();
+	graph.add(0, 1);
+	graph.add(1, 0);
+	graph.add(1, 4);
+	graph.add(1, 5);
+	graph.add(2, 4);
+	graph.add(2, 5);
+	graph.add(3, 2);
+	graph.add(3, 6);
+	graph.add(4, 1);
+	graph.add(4, 2);
+	graph.add(5, 1);
+	graph.add(5, 2);
+	graph.add(5, 6);
+	graph.add(6, 5);
+	graph.add(6, 3);
+	graph.add(7, null);
+
+	graph.breadthFirst_1(3);
+	Map<Integer, BreadthFirstNode> breadthFirstRable = graph
+		.getBreadthFirstTable();
+
+	Assertions.assertThat(breadthFirstRable.get(0))
+		.extracting("shortesDistance").containsOnly(4);
+	Assertions.assertThat(breadthFirstRable.get(0))
+		.extracting("predecessor").containsOnly(1);
+
+	Assertions.assertThat(breadthFirstRable.get(1))
+		.extracting("shortesDistance").containsOnly(3);
+	Assertions.assertThat(breadthFirstRable.get(1))
+		.extracting("predecessor").containsOnly(4);
+
+	Assertions.assertThat(breadthFirstRable.get(2))
+		.extracting("shortesDistance").containsOnly(1);
+	Assertions.assertThat(breadthFirstRable.get(2))
+		.extracting("predecessor").containsOnly(3);
+
+	Assertions.assertThat(breadthFirstRable.get(3))
+		.extracting("shortesDistance").containsOnly(0);
+	Assertions.assertThat(breadthFirstRable.get(3))
+		.extracting("predecessor").containsNull();
+
+	Assertions.assertThat(breadthFirstRable.get(4))
+		.extracting("shortesDistance").containsOnly(2);
+	Assertions.assertThat(breadthFirstRable.get(4))
+		.extracting("predecessor").containsOnly(2);
+
+	Assertions.assertThat(breadthFirstRable.get(5))
+		.extracting("shortesDistance").containsOnly(2);
+	Assertions.assertThat(breadthFirstRable.get(5))
+		.extracting("predecessor").containsOnly(2);
+
+	Assertions.assertThat(breadthFirstRable.get(6))
+		.extracting("shortesDistance").containsOnly(1);
+	Assertions.assertThat(breadthFirstRable.get(6))
+		.extracting("predecessor").containsOnly(3);
+
+    }
+
+    @Test
+    public void findShortestPath() {
+	AdjacencyListGraph graph = new AdjacencyListGraph();
+	graph.add(0, 1);
+	graph.add(1, 0);
+	graph.add(1, 4);
+	graph.add(1, 5);
+	graph.add(2, 4);
+	graph.add(2, 5);
+	graph.add(3, 2);
+	graph.add(3, 6);
+	graph.add(4, 1);
+	graph.add(4, 2);
+	graph.add(5, 1);
+	graph.add(5, 2);
+	graph.add(5, 6);
+	graph.add(6, 5);
+	graph.add(6, 3);
+	graph.add(7, null);
+
+	String actualShortesPath = graph.findShortestPath(0, 3);
+	String expectedResult = "0, 1, 4, 2, 3";
+	assertThat(expectedResult).isEqualTo(actualShortesPath);
+    }
+
+    @NamedParameters("breadthFirstParams")
+    private static final Object[] paramsForBreadthFirstSearch() {
+	return new Object[] {
+		new Object[] { 0, 3, 4 },
+		new Object[] { 1, 3, 3 },
+		new Object[] { 2, 3, 1 },
+		new Object[] { 3, 3, 0 },
+		new Object[] { 4, 3, 2 },
+		new Object[] { 5, 3, 2 },
+		new Object[] { 6, 3, 3 },
+		new Object[] { 7, 3, null } };
+    }
+
+    @Test
+    @Parameters(named = "breadthFirstParams")
+    public void findShortestDistance(Integer startVertex, Integer endVertex,
+	    Integer shortesDistance) {
+	AdjacencyListGraph graph = new AdjacencyListGraph();
+	graph.add(0, 1);
+	graph.add(1, 0);
+	graph.add(1, 4);
+	graph.add(1, 5);
+	graph.add(2, 4);
+	graph.add(2, 5);
+	graph.add(3, 2);
+	graph.add(3, 6);
+	graph.add(4, 1);
+	graph.add(4, 2);
+	graph.add(5, 1);
+	graph.add(5, 2);
+	graph.add(5, 6);
+	graph.add(6, 5);
+	graph.add(6, 3);
+	graph.add(7, null);
+
+	Integer actualShortestDistance = graph.findShortestDistance(
+		startVertex, endVertex);
+	assertThat(actualShortestDistance).isEqualTo(actualShortestDistance);
+    }
+
+    @Test
+    public void findShortestPathForWeightedGraph() {
+	AdjacencyListGraph graph = new AdjacencyListGraph();
+
+	graph.add(1, 2, 1);
+	graph.add(1, 4, 3);
+	graph.add(2, 1, 1);
+	graph.add(2, 5, 1);
+	graph.add(2, 3, 2);
+	graph.add(3, 2, 2);
+	graph.add(3, 6, 3);
+	graph.add(4, 1, 3);
+	graph.add(4, 5, 1);
+	graph.add(5, 4, 1);
+	graph.add(5, 2, 1);
+	graph.add(5, 6, 3);
+	graph.add(6, 3, 3);
+	graph.add(6, 5, 3);
+
+	String actualShortesPath = graph.findShortestPath(1, 6);
+	String expectedResult = "1, 2, 5, 6";
+	assertThat(expectedResult).isEqualTo(actualShortesPath);
+
+	Integer actualShortestDistance = graph.findShortestDistance(1, 6);
+	assertThat(actualShortestDistance).isEqualTo(5);
+    }
+
+    @Test
+    @Repeating(repetition = 100)
+    public void testSelectionSort_1() {
+	Random random = new Random();
+	int[] actual = random.ints(-100, 100).limit(100).toArray();
+	int[] expected = Arrays.copyOf(actual, actual.length);
+	Arrays.sort(expected);
+	Root.selectionSort1(actual);
+	assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    @Repeating(repetition = 100)
+    public void testQuickSort_1() {
+	Random random = new Random();
+	int[] actual = random.ints(-100, 100).limit(10).toArray();
+	int[] expected = Arrays.copyOf(actual, actual.length);
+	Arrays.sort(expected);
+	Root.quickSort1(actual);
+	assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    @Repeating(repetition = 100)
+    public void testMergeSort_1() {
+	Random random = new Random();
+	int[] actual = random.ints(-100, 101).limit(100).toArray();
+	int[] expected = Arrays.copyOf(actual, actual.length);
+	Arrays.sort(expected);
+	Root.mergeSort1(actual);
+	assertThat(actual).isEqualTo(expected);
+
+    }
+
+    @Test
+    public void testInsertionSort_1() {
+	Random random = new Random();
+	int[] actual = random.ints(-100, 101).limit(10).toArray();
+	int[] expected = Arrays.copyOf(actual, actual.length);
+	Arrays.sort(expected);
+	Root.insertionSort_1(actual);
+	assertThat(actual).isEqualTo(expected);
+
+    }
+
+    @Test
+    @Repeating(repetition = 100)
+    public void testBubleSort() {
+	Random random = new Random();
+	int[] actual = random.ints(-100, 100).limit(100).toArray();
+	int[] expected = Arrays.copyOf(actual, actual.length);
+	Arrays.sort(expected);
+	Root.bubleSort(actual);
+	assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    @Repeating(repetition = 100)
+    public void testSelectionSort_2() {
+	IntSupplier intSupplier = () -> {
+	    return new Random().nextInt(200) - 100;
+	};
+	int[] actual = IntStream.generate(intSupplier).limit(100).toArray();
+	int[] expected = Arrays.copyOf(actual, actual.length);
+	Arrays.sort(expected);
+	Root.selectionSort2(actual);
+	assertThat(actual).isEqualTo(expected);
+
+    }
+
+    @Test
+    @Repeating(repetition = 100)
+    public void testBubbleSort_1() {
+	Random random = new Random();
+	int[] actual = random.ints(-100, 100).limit(100).toArray();
+	int[] expected = Arrays.copyOf(actual, actual.length);
+	Arrays.sort(expected);
+	Root.bubleSort_1(actual);
+	assertThat(actual).isEqualTo(expected);
+
+    }
+
+    @Test
+    @Repeating(repetition = 100)
+    public void testSelectionSort_3() {
+	Random random = new Random();
+	int[] actual = random.ints(-100, 101).limit(100).toArray();
+	int[] expected = Arrays.copyOf(actual, actual.length);
+	Arrays.sort(expected);
+	Root.selectionSort3(actual);
+	assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    @Repeating(repetition = 100)
+    public void testInsertionSort_2() {
+	int[] actual = new Random().ints(-100, 101).limit(100).toArray();
+	int[] expected = Arrays.copyOf(actual, actual.length);
+	Arrays.sort(expected);
+	Root.insertionSort_2(actual);
+	assertThat(actual).isEqualTo(expected);
+
+    }
+
+    @Test
+    @Repeating(repetition = 100)
+    public void testBubbleSort_2() {
+	int[] actual = new Random().ints(-100, 101).limit(100).toArray();
+	int[] expected = Arrays.copyOf(actual, actual.length);
+	Arrays.sort(expected);
+	Root.bubleSort_2(actual);
+	assertThat(actual).isEqualTo(expected);
+
+    }
+
+    @Test
+    @Repeating(repetition = 100)
+    public void testShellSort() {
+	int[] actual = new Random().ints(-100, 101).limit(10).toArray();
+	int[] expected = Arrays.copyOf(actual, actual.length);
+	Arrays.sort(expected);
+	Root.shellSort(actual);
+	assertThat(actual).isEqualTo(expected);
+
+    }
+
+    @Test
+    @Repeating(repetition = 100)
+    public void testShellSort_1() {
+	int[] actual = new Random().ints(-100, 101).limit(100).toArray();
+	int[] expected = Arrays.copyOf(actual, actual.length);
+	Arrays.sort(expected);
+	Root.shellSort_1(actual);
+	assertThat(actual).isEqualTo(expected);
+
+    }
+
+    @Test
+    @Repeating(repetition = 100)
+    public void testInsertionSort_3() {
+	int[] actual = new Random().ints(-100, 101).limit(100).toArray();
+	int[] expected = Arrays.copyOf(actual, actual.length);
+	Arrays.sort(expected);
+	Root.insertionSort_3(actual);
+	assertThat(actual).isEqualTo(expected);
+
+    }
+
+    @Test
+    @Repeating(repetition = 100)
+    public void testBubbleSort_3() {
+	int[] actual = new Random().ints(-100, 101).limit(100).toArray();
+	int[] expected = Arrays.copyOf(actual, actual.length);
+	Arrays.sort(expected);
+	Root.bubleSort_3(actual);
+	assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    @Repeating(repetition = 100)
+    public void testSelectionSort_4() {
+	Random random = new Random();
+	int[] actual = random.ints(-100, 101).limit(100).toArray();
+	int[] expected = Arrays.copyOf(actual, actual.length);
+	Arrays.sort(expected);
+	Root.selectionSort_4(actual);
+	assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    @Repeating(repetition = 100)
+    public void testMergeSort_2() {
+	int[] actual = new Random().ints(-100, 101).limit(100).toArray();
+	int[] expected = Arrays.copyOf(actual, actual.length);
+	Arrays.sort(expected);
+	Root.mergeSort_2(actual);
+	assertThat(actual).isEqualTo(expected);
+
+    }
+
+    @Test
+    @Repeating(repetition = 100)
+    public void testQuickSort_2() {
+	int[] actual = new Random().ints(-100, 101).limit(10).toArray();
+	int[] expected = Arrays.copyOf(actual, actual.length);
+	Arrays.sort(expected);
+	Root.quickSort_2(actual);
+	assertThat(actual).isEqualTo(expected);
+
+    }
+
+    @Test
+    @Repeating(repetition = 100)
+    public void testQuickSort_3() {
+	int[] actual = new Random().ints(-100, 101).limit(10).toArray();
+	int[] expected = Arrays.copyOf(actual, actual.length);
+	Arrays.sort(expected);
+	Root.quickSort_3(actual);
+	assertThat(actual).isEqualTo(expected);
+
+    }
+
+    @Test
+    @Repeating(repetition = 100)
+    public void testCountSort() {
+	int min = 10;
+	int max = 210;
+	int[] actual = new Random().ints(min, max).limit(10).toArray();
+	int[] expected = Arrays.copyOf(actual, actual.length);
+	Arrays.sort(expected);
+	Root.countSort(actual, min, max);
+	assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    @Repeating(repetition = 100)
+    public void testRadixSort() {
+	int min = 0;
+	int max = 10;
+	int[] actual = new Random().ints(min, max).limit(10).toArray();
+	int[] expected = Arrays.copyOf(actual, actual.length);
+	Arrays.sort(expected);
+	Root.radixSort(actual);
+	assertThat(actual).isEqualTo(expected);
+    }
+
+    private static final Object[] parametersForTestGetDigit() {
+	return new Object[] {
+		new Object[] { 156, 0, 6 },
+		new Object[] { 156, 1, 5 },
+		new Object[] { 156, 2, 1 },
+		new Object[] { 30156, 3, 0 },
+		new Object[] { 156, 5, 0 },
+		new Object[] { 156, 10, 0 } };
+    }
+
+    @Parameters
+    @Test
+    public void testGetDigit(int value, int digit, int expected) {
+
+	int actual = Root.getDigit(value, digit);
+	assertThat(actual).isEqualTo(expected);
+
+    }
+
+    private static final Object[] parametersForTestGetDigits() {
+	return new Object[] {
+		new Object[] {
+			new int[] { 156, 25, 1, 300056, 99 },
+			0,
+			new int[] { 6, 5, 1, 6, 9 } },
+		new Object[] {
+			new int[] { 156, 25, 1, 300056, 99 },
+			1,
+			new int[] { 5, 2, 0, 5, 9 } },
+		new Object[] {
+			new int[] { 156, 25, 1, 300056, 99 },
+			2,
+			new int[] { 1, 0, 0, 0, 0 } },
+		new Object[] {
+			new int[] { 156, 25, 1, 300056, 99 },
+			3,
+			new int[] { 0, 0, 0, 0, 0 } },
+		new Object[] {
+			new int[] { 156, 25, 1, 300056, 99 },
+			4,
+			new int[] { 0, 0, 0, 0, 0 } },
+		new Object[] {
+			new int[] { 156, 25, 1, 300056, 99 },
+			5,
+			new int[] { 0, 0, 0, 3, 0 } },
+		new Object[] {
+			new int[] { 156, 25, 1, 300056, 99 },
+			6,
+			new int[] { 0, 0, 0, 0, 0 } },
+		new Object[] {
+			new int[] { 156, 25, 1, 300056, 99 },
+			15,
+			new int[] { 0, 0, 0, 0, 0 } }, };
+    }
+
+    @Parameters
+    @Test
+    public void testGetDigits(int[] array, int index, int[] expected) {
+
+	int[] actual = Root.getDigits(array, index);
+	assertThat(actual).isEqualTo(expected);
+
+    }
+
+    private static final Object[] parametersForTestAdjustFrequency() {
+	return new Object[] {
+		new Object[] {
+			new int[] { 0, 1, 2, 3, 0, 0, 2 },
+			new int[] { 0, 1, 3, 6, 6, 6, 8 }, },
+		new Object[] {
+			new int[] { 1, 1, 1, 1, 1, 1, 1 },
+			new int[] { 1, 2, 3, 4, 5, 6, 7 } },
+		new Object[] {
+			new int[] { 0, 0, 0, 0, 0, 0, 0 },
+			new int[] { 0, 0, 0, 0, 0, 0, 0 } },
+		new Object[] {
+			new int[] { 0, 0, 2, 1, 0, 0, 0, 0, 1, 2 },
+			new int[] { 0, 0, 2, 3, 3, 3, 3, 3, 4, 6 } } };
+    }
+
+    @Test
+    @Parameters
+    public void testAdjustFrequency(int array[], int expected[]) {
+	Root.adjustFrequency(array);
+	int actual[] = array;
+	assertThat(actual).isEqualTo(expected);
+
+    }
+
+    private static final Object[] parametersForTestGettingFrequencyArray() {
+	return new Object[] {
+		new Object[] {
+			new int[] { 156, 789, 300, 100 },
+			new int[] { 6, 9, 0, 0 },
+			new int[] { 2, 0, 0, 0, 0, 0, 1, 0, 0, 1 } },
+		new Object[] {
+			new int[] { 156, 789, 300, 100 },
+			new int[] { 5, 8, 0, 0 },
+			new int[] { 2, 0, 0, 0, 0, 1, 0, 0, 1, 0 } },
+		new Object[] {
+			new int[] { 156, 789, 300, 100 },
+			new int[] { 1, 7, 3, 1 },
+			new int[] { 0, 2, 0, 1, 0, 0, 0, 1, 0, 0 } } };
+    }
+
+    @Test
+    @Parameters
+    public void testGettingFrequencyArray(int[] array, int[] digits,
+	    int[] expected) {
+	int[] actual = Root.getFrequencyArray(array, digits);
+	assertThat(actual).isEqualTo(expected);
+    }
+
+    private static final Object[] parametersForTestFindMax() {
+
+	return new Object[] {
+
+		new Object[] { new int[] { 156, 789, 300, 100 }, 789 },
+
+		new Object[] { new int[] { 56, 85, 10, 99, 1229, 635 }, 1229 },
+		new Object[] {
+			new int[] {
+				56,
+				20,
+				1,
+				9,
+				3,
+				4,
+				10,
+				69,
+				25,
+				29,
+				289,
+				78,
+				4 },
+			289 } };
+    }
+
+    @Test
+    @Parameters
+    public void testFindMax(int[] array, int expected) {
+	int actual = Root.findMax(array);
+	assertThat(actual).isEqualTo(expected);
+    }
+
+    private static final Object[] parametersForTestStableSort() {
+	return new Object[] {
+		new Object[] {
+			new int[] { 156, 789, 300, 100 },
+			new int[] { 6, 9, 0, 0 },
+			new int[] { 2, 0, 0, 0, 0, 0, 1, 0, 0, 1 },
+			new int[] { 2, 2, 2, 2, 2, 2, 3, 3, 3, 4 },
+			new int[] { 300, 100, 156, 789 } },
+		new Object[] {
+			new int[] { 300, 100, 156, 789 },
+			new int[] { 0, 0, 5, 8 },
+			new int[] { 2, 0, 0, 0, 0, 1, 0, 0, 1, 0 },
+			new int[] { 2, 2, 2, 2, 2, 3, 3, 3, 4, 4 },
+			new int[] { 300, 100, 156, 789 } },
+		new Object[] {
+			new int[] { 300, 100, 156, 789 },
+			new int[] { 3, 1, 1, 7 },
+			new int[] { 0, 2, 0, 1, 0, 0, 0, 1, 0, 0 },
+			new int[] { 0, 2, 2, 3, 3, 3, 3, 4, 4, 4 },
+			new int[] { 100, 156, 300, 789 } } };
+    }
+
+    @Parameters
+    @Test
+    public void testStableSort(int[] array, int[] digits, int[] unadjustedFreq,
+	    int adjustedFreq[], int[] expected) {
+
+	PowerMockito.spy(Root.class);
+	PowerMockito.when(Root.getDigits(array, 0)).thenReturn(digits);
+	PowerMockito.when(Root.getFrequencyArray(array, digits)).thenReturn(
+		unadjustedFreq);
+
+	try {
+	    Method method = Root.class.getDeclaredMethod("adjustFrequency",
+		    int[].class);
+	    Answer<?> returnAdjustedFreq = invocation -> {
+		int unadjustedfreqArray[] = (int[]) invocation.getArgument(0);
+		// System.out.println("BEFORE: " +
+		// Arrays.toString(unadjustedfreqArray));
+		System.arraycopy(adjustedFreq, 0, unadjustedFreq, 0,
+			adjustedFreq.length);
+		// System.out.println("AFTER: " +
+		// Arrays.toString(unadjustedfreqArray));
+		return null;
+	    };
+
+	    PowerMockito.doAnswer(returnAdjustedFreq).when(Root.class, method)
+		    .withArguments(unadjustedFreq);
+	    ;
+	    // Root.stableCountSort(array, 0);
+	    // assertThat(array).isEqualTo(expected);
+	} catch (NoSuchMethodException e) {
+	    e.printStackTrace();
+	} catch (SecurityException e) {
+	    e.printStackTrace();
+	} catch (Exception e) {
+	    e.printStackTrace();
+	}
+
+    }
+
+    @Parameters(method = "parametersForTestStableSort")
+    @Test
+    public void testStableSort_SimpleWay(int[] array, int[] digits,
+	    int[] unadjustedFreq, int adjustedFreq[], int[] expected) {
+
+	Root.sort(array, digits, adjustedFreq);
+	assertThat(array).isEqualTo(expected);
+    }
+
+    private static final Object[] parametersForTestOddonacci() {
+	return new Object[] {
+		new Object[] { 1, 1 },
+		new Object[] { 2, 1 },
+		new Object[] { 3, 1 },
+		new Object[] { 4, 3 },
+		new Object[] { 5, 5 },
+		new Object[] { 6, 9 },
+		new Object[] { 7, 17 },
+		new Object[] { 8, 31 },
+		new Object[] { 9, 57 },
+		new Object[] { 10, 105 },
+		new Object[] { 11, 193 }, };
+    }
+
+    @Test
+    @Parameters
+    public void testOddonacci(int n, int expected) {
+	int actual = Root.Oddonacci(n);
+	assertThat(actual).isEqualTo(expected);
+	
+	int i = 0;
+	while(i < 100)
+	{
+	    System.out.println(Root.Oddonacci(i));
+	    i++;
+	}
+    }
+    
+    @Test 
+    @Repeating(repetition=100)
+    public void mergeSortDescending()
+    {
+	int[] actual = new Random().ints(-100, 100).limit(100).toArray();
+	Integer[] expectedInteger = Arrays.stream(actual).boxed().toArray(Integer[]::new);
+	Comparator<Integer> comp = Integer::compare;
+	
+	//Comparator<Integer> comparator = Integer::compare
+	Comparator<Integer> comparator = (x,y) -> {	  
+	    return Integer.compare(x, y);
+	};
+
+	Arrays.sort(expectedInteger, comparator.reversed());
+	int[] expected = Stream.of(expectedInteger).mapToInt(Integer::intValue).toArray();
+	Root.mergeSortDescending(actual);
+	assertThat(actual).isEqualTo(expected);
+	
+    }
+    
+    
+    @Test
+    @Repeating(repetition=100)
+    public void testInsertionSortRecursion()
+    {
+	int[] actual = new Random().ints(-100, 100).limit(10).toArray();
+	int[] expected = Arrays.copyOf(actual, actual.length);
+	Arrays.sort(expected);
+	Root.insertionSort_Recursion(actual);
+	assertThat(actual).isEqualTo(expected);
+	
+	
+    }
+    
+    @Test
+    //@Repeating(repetition=100)
+    public void testRadixSort2()
+    {
+	String[] actual = new String[10];
+	
+	int i = 0;
+	while(i < actual.length)
+	{
+	    int length = new Random().nextInt(10);
+	    int j = 0;
+	    StringBuilder stringBuilder = new StringBuilder();
+	    while(j < length)
+	    {
+		char character = (char)(new Random().nextInt(95)+32);
+		stringBuilder.append(character);
+		j++;
+	    }
+	    actual[i] = stringBuilder.toString();
+	    i++;
+	}
+	
+	String[] expected = Arrays.copyOf(actual, actual.length);
+	Arrays.sort(expected);
+	Root.radixSort(actual);
+	assertThat(actual).isEqualTo(expected);
+	
     }
     
 

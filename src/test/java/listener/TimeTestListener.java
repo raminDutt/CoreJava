@@ -84,7 +84,11 @@ public class TimeTestListener extends RunListener {
     }
     
     
-    
+    @Override
+    public Object clone() throws CloneNotSupportedException
+    {
+	return super.clone();
+    }
 
 
 }

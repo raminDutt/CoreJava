@@ -20,6 +20,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.annotation.Annotation;
+import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -67,6 +68,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Currency;
@@ -146,9 +148,25 @@ public class Root {
 
     public static void main(String args[]) throws Exception {
 
-	State state = new State(State.Case.CANCELLED);
-	System.out.println("Hello");
+	
+	List<IPlugin> iramin = IPlugin.INSTANCE;
+	iramin.forEach(plugin -> System.out.println(plugin.getName()));
+	System.out.println("The end");
 
+	
+    }
+
+    public static String getValueFromCache( Map<Integer, SoftReference<String>> cache) {
+	Collection<SoftReference<String>> values = cache.values();
+	Iterator<SoftReference<String>> iterator = values.iterator();
+	while (iterator.hasNext()) {
+	    SoftReference<String> softReference = iterator.next();
+	    String cacheValue = softReference.get();
+	    if (cacheValue != null) {
+		return cacheValue;
+	    }
+	}
+	return null;
     }
 
     private void mergeSortBck(int[] array, int p, int r) {
@@ -4648,40 +4666,44 @@ public class Root {
     }
 
     private void quickSort(int[] array, int p, int r) {
+	System.out.println("*********");
+	System.out.println(Arrays.toString(array));
+	System.out.println("p=" + p);
+	System.out.println("r=" + r);
 	if (r <= p) {
+
 	    return;
 	}
 	int q = partition(array, p, r);
+
+	System.out.println(Arrays.toString(array));
 	quickSort(array, p, q - 1);
 	quickSort(array, q + 1, r);
     }
 
     private int partition(int[] array, int p, int r) {
 
-	int i = p - 1;
-	int j = p - 1;
+	int x = p - 1;
+	int y = p - 1;
 	int pivot = array[r];
-	while (p < r) {
-	    int z = array[p];
-	    if (z >= pivot) {
-		j++;
+	int i = p;
+	while (i < r) {
+	    int z = array[i];
+	    if (z < pivot) {
+		x++;
+		y++;
+		array[y] = array[x];
+		array[x] = z;
 	    } else {
-		i++;
-		j++;
-		swap(array, i, j);
+		y++;
 	    }
-
-	    p++;
+	    i++;
 	}
-	int q = i + 1;
-	swap(array, q, r);
-	return q;
-    }
 
-    private void swap(int[] array, int q, int r) {
-	int temp = array[q];
-	array[q] = array[r];
-	array[r] = temp;
+	int q = x + 1;
+	array[r] = array[q];
+	array[q] = pivot;
+	return q;
 
     }
 
@@ -4795,21 +4817,811 @@ public class Root {
 	    int j = i;
 	    int z = actual[j];
 	    while (j > 0) {
-		if(actual[j-1] > z)
-		{
-		    actual[j]=actual[j-1];
+		if (actual[j - 1] > z) {
+		    actual[j] = actual[j - 1];
 		    j--;
-		}
-		else
-		{
+		} else {
 		    break;
 		}
-		
+
 	    }
-	    actual[j]=z;
+	    actual[j] = z;
 	    i++;
 	}
 
+    }
+
+    public static void selectionSort1(int[] array) {
+
+	int i = 0;
+	int size = array.length;
+	while (i < size) {
+	    int min = array[i];
+	    int min_index = i;
+	    int j = i + 1;
+	    while (j < size) {
+		if (array[j] < min) {
+		    min = array[j];
+		    min_index = j;
+		}
+		j++;
+	    }
+	    array[min_index] = array[i];
+	    array[i] = min;
+	    i++;
+	}
+    }
+
+    public static void quickSort1(int[] array) {
+
+	quickSort1(array, 0, array.length - 1);
+    }
+
+    private static void quickSort1(int[] array, int p, int r) {
+	if (r <= p) {
+	    return;
+	}
+	int q = partion1(array, p, r); // q is element of [p,r]
+	quickSort1(array, p, q - 1);
+	quickSort1(array, q + 1, r);
+    }
+
+    private static int partion1(int[] array, int p, int r) {
+	int pivot = array[r];
+	int lt = p - 1;
+	int gte = p - 1;
+
+	int i = p;
+	while (i < r) {
+	    int z = array[i];
+	    if (z < pivot) {
+		lt++;
+		gte++;
+		array[gte] = array[lt];
+		array[lt] = z;
+	    } else {
+		gte++;
+	    }
+	    i++;
+	}
+	int q = lt + 1;
+	array[r] = array[q];
+	array[q] = pivot;
+	return q;
+    }
+
+    public static void mergeSort1(int[] array) {
+
+	mergeSort1(array, 0, array.length - 1);
+    }
+
+    private static void mergeSort1(int[] array, int p, int r) {
+
+	if (r == p) {
+	    return;
+	}
+	int q = (p + r) / 2;
+	mergeSort1(array, p, q);
+	mergeSort1(array, q + 1, r);
+
+	int[] lhs = Arrays.copyOfRange(array, p, q + 1);
+	int[] rhs = Arrays.copyOfRange(array, q + 1, r + 1);
+
+	int i = 0;
+	int j = 0;
+	while (p <= r) {
+	    if (lhs[i] <= rhs[j]) {
+
+		array[p] = lhs[i];
+		i++;
+		p++;
+
+		if (i == lhs.length) {
+		    while (j < rhs.length) {
+			array[p] = rhs[j];
+			j++;
+			p++;
+		    }
+		}
+
+	    } else {
+		array[p] = rhs[j];
+		j++;
+		p++;
+
+		if (j == rhs.length) {
+		    while (i < lhs.length) {
+			array[p] = lhs[i];
+			i++;
+			p++;
+		    }
+		}
+
+	    }
+
+	}
+    }
+
+    public static void insertionSort_1(int[] array) {
+
+	int length = array.length;
+	int i = 1;
+	while (i < length) {
+	    int z = array[i];
+	    int j = i - 1;
+	    while (j >= 0) {
+		if (array[j] > z) {
+		    array[j + 1] = array[j];
+		    j--;
+		} else {
+		    break;
+		}
+	    }
+	    array[j + 1] = z;
+	    i++;
+	}
+    }
+
+    public static void bubleSort(int[] array) {
+
+	int lastSortedIndex = array.length - 1;
+	while (lastSortedIndex > 0) {
+	    int i = 0;
+	    while (i < lastSortedIndex) {
+		if (array[i] > array[i + 1]) {
+		    int temp = array[i + 1];
+		    array[i + 1] = array[i];
+		    array[i] = temp;
+		}
+
+		i++;
+	    }
+	    lastSortedIndex = lastSortedIndex - 1;
+	}
+    }
+
+    public static void selectionSort2(int[] actual) {
+	int i = 0;
+	while (i < actual.length) {
+	    int j = i + 1;
+	    int lowestInteger = i;
+	    int lowestValue = actual[i];
+	    while (j < actual.length) {
+		if (lowestValue > actual[j]) {
+		    lowestInteger = j;
+		    lowestValue = actual[j];
+		}
+		j++;
+	    }
+	    int temp = actual[i];
+	    actual[i] = actual[lowestInteger];
+	    actual[lowestInteger] = temp;
+	    i++;
+	}
+
+    }
+
+    public static void bubleSort_1(int[] actual) {
+
+	int size = actual.length;
+	while (size > 0) {
+	    int i = 0;
+	    while (i < size) {
+
+		if (i != size - 1 && actual[i] > actual[i + 1]) {
+		    int temp = actual[i];
+		    actual[i] = actual[i + 1];
+		    actual[i + 1] = temp;
+		}
+		i++;
+	    }
+	    size--;
+
+	}
+    }
+
+    public static void selectionSort3(int[] actual) {
+	int i = 0;
+	while (i < actual.length) {
+	    int lowestIndex = i;
+	    int j = i + 1;
+	    while (j < actual.length) {
+		if (actual[j] < actual[lowestIndex]) {
+		    lowestIndex = j;
+		}
+		j++;
+	    }
+	    int min = actual[lowestIndex];
+	    actual[lowestIndex] = actual[i];
+	    actual[i] = min;
+	    i++;
+	}
+
+    }
+
+    public static void insertionSort_2(int[] array) {
+
+	int i = 1;
+	while (i < array.length) {
+	    int temp = array[i];
+	    int j = i - 1;
+	    while (j >= 0 && array[j] > temp) {
+		array[j + 1] = array[j];
+		j--;
+	    }
+	    array[j + 1] = temp;
+	    i++;
+	}
+
+    }
+
+    public static void bubleSort_2(int[] array) {
+
+	int size = array.length;
+
+	while (size > 0) {
+	    int i = 0;
+	    while (i < size) {
+		if (i == size - 1) {
+		    break;
+		}
+
+		if (array[i] > array[i + 1]) {
+		    int temp = array[i + 1];
+		    array[i + 1] = array[i];
+		    array[i] = temp;
+		}
+		i++;
+	    }
+	    size--;
+	}
+    }
+
+    public static void shellSort(int[] array) {
+	int gap = array.length / 2;
+	while (gap > 0) {
+	    int i = gap;
+	    while (i < array.length) {
+		int element = array[i];
+		int j = i - gap;
+		while (j >= 0 && array[j] > element) {
+		    array[j + gap] = array[j];
+		    j = j - gap;
+		}
+		array[j + gap] = element;
+		i++;
+	    }
+	    gap = gap / 2;
+	}
+    }
+
+    public static void shellSort_1(int[] array) {
+	int gap = array.length / 2;
+	while (gap != 0) {
+	    int i = gap;
+	    while (i < array.length) {
+		int temp = array[i];
+		int j = i - gap;
+		while (j >= 0) {
+		    if (temp < array[j]) {
+			array[j + gap] = array[j];
+			j = j - gap;
+		    } else {
+			break;
+		    }
+
+		}
+		array[j + gap] = temp;
+		i++;
+	    }
+	    gap = gap / 2;
+	}
+
+    }
+
+    public static void insertionSort_3(int[] array) {
+	int i = 1;
+	while (i < array.length) {
+	    int j = i - 1;
+	    int temp = array[i];
+	    while (j >= 0) {
+		if (array[j] > temp) {
+		    array[j + 1] = array[j];
+		} else {
+		    break;
+		}
+		j--;
+	    }
+	    array[j + 1] = temp;
+	    i++;
+	}
+    }
+
+    public static void bubleSort_3(int[] array) {
+
+	int size = array.length;
+	while (size > 0) {
+	    int i = 0;
+	    while (i < size) {
+		if (i != size - 1 && array[i] > array[i + 1]) {
+		    int temp = array[i];
+		    array[i] = array[i + 1];
+		    array[i + 1] = temp;
+		}
+		i++;
+	    }
+	    size--;
+	}
+
+    }
+
+    public static void selectionSort_4(int[] array) {
+	int i = 0;
+	while (i < array.length) {
+
+	    int j = i;
+	    int lowestIndex = j;
+	    while (j < array.length) {
+		if (array[j] < array[lowestIndex]) {
+		    lowestIndex = j;
+		}
+		j++;
+	    }
+
+	    int temp = array[lowestIndex];
+	    array[lowestIndex] = array[i];
+	    array[i] = temp;
+	    i++;
+	}
+
+    }
+
+    public static void mergeSort_2(int[] array) {
+
+	mergeSort_2(array, 0, array.length - 1);
+    }
+
+    public static void mergeSort_2(int[] array, int p, int r) {
+	if (p == r) {
+	    return;
+	}
+	int q = (p + r) / 2;
+	mergeSort_2(array, p, q);
+	mergeSort_2(array, q + 1, r);
+
+	int[] lhs = Arrays.copyOfRange(array, p, q + 1);
+	int[] rhs = Arrays.copyOfRange(array, q + 1, r + 1);
+
+	// optimization 1
+	if (array[q] <= array[q + 1]) {
+	    return;
+	}
+
+	// optimization 2
+	if (r - p == 1) {
+	    // simple swap for merging cells of size 1 (leafs)
+	    int temp = array[p];
+	    array[p] = array[r];
+	    array[r] = temp;
+	}
+	int index = p;
+	int i = 0;
+	int j = 0;
+	while (index <= r) {
+	    // Equal sign is important to keep the sort stable
+	    if (lhs[i] <= rhs[j]) {
+		array[index] = lhs[i];
+		i++;
+	    } else {
+		array[index] = rhs[j];
+		j++;
+	    }
+	    index++;
+
+	    // Optimization 3
+	    if (i == lhs.length) {
+		// Don't need to to anything since all elements are in proper
+		// space
+		break;
+	    }
+
+	    // Optimization 4
+	    if (j == rhs.length) {
+		while (i < lhs.length) {
+		    array[index] = lhs[i];
+		    i++;
+		    index++;
+		}
+	    }
+	}
+
+    }
+
+    public static void quickSort_2(int[] actual) {
+	quickSort_2(actual, 0, actual.length - 1);
+    }
+
+    private static void quickSort_2(int[] actual, int start, int end) {
+
+	if (start >= end) {
+	    return;
+	}
+	int pivotIndex = partition_2(actual, start, end);
+	quickSort_2(actual, start, pivotIndex - 1);
+	quickSort_2(actual, pivotIndex + 1, end);
+
+    }
+
+    private static int partition_2(int[] array, int start, int end) {
+
+	int pivot = array[end];
+	int lt = start - 1;
+	int gt = start;
+	while (gt < end) {
+
+	    if (array[gt] < pivot) {
+		lt++;
+		if (lt != gt) {
+		    int temp = array[lt];
+		    array[lt] = array[gt];
+		    array[gt] = temp;
+		}
+	    }
+	    gt++;
+	}
+
+	int pivotIndex = lt + 1;
+	array[end] = array[pivotIndex];
+	array[pivotIndex] = pivot;
+	return pivotIndex;
+    }
+
+    public static void quickSort_3(int[] array) {
+
+	quickSort_3(array, 0, array.length - 1);
+
+    }
+
+    private static void quickSort_3(int[] array, int start, int end) {
+
+	if (end <= start) {
+	    return;
+	}
+	int index = partition_3A(array, start, end);
+	quickSort_3(array, start, index - 1);
+	quickSort_3(array, index + 1, end);
+    }
+
+    private static int partition_3(int[] array, int start, int end) {
+
+	int lt = start;
+	int gt = end;
+	int pivot = array[end];
+	// int pivot_index = gt;
+
+	while (lt < gt) {
+	    if (array[lt] >= pivot) {
+		// pivot_index = lt;
+		array[gt] = array[lt];
+		gt--;
+		while (gt > lt) {
+		    if (array[gt] < pivot) {
+			// pivot_index = gt;
+			array[lt] = array[gt];
+			lt++;
+			break;
+		    }
+		    gt--;
+
+		}
+
+	    } else {
+		lt++;
+	    }
+	}
+	System.out.println("lt = " + lt + " gt = " + gt);
+	array[lt] = pivot;
+	return lt;
+    }
+
+    public static int partition_3A(int[] array, int start, int end) {
+	int i = start;
+	int j = end;
+	int pivot = array[j];
+	while (i < j) {
+	    while (i < j) {
+		if (array[i] >= pivot) {
+		    break;
+		}
+		i++;
+	    }
+	    array[j] = array[i];
+	    while (j > i) {
+		if (array[j] < pivot) {
+		    break;
+		}
+		j--;
+	    }
+	    array[i] = array[j];
+	}
+	assert i == j;
+	array[i] = pivot;
+	return i;
+    }
+
+    public static void countSort(int[] array, int min, int max) {
+
+	int temp[] = new int[max - min + 1];
+	// index = value - min
+	// value = index +min
+
+	int i = 0;
+	while (i < array.length) {
+	    int index = array[i] - min;
+	    temp[index] = temp[index] + 1;
+	    i++;
+	}
+
+	int index = 0;
+	int j = 0;
+	while (index < temp.length) {
+	    int count = temp[index];
+	    if (count != 0) {
+		int k = 0;
+		while (k < count) {
+		    array[j] = index + min;
+		    k++;
+		    j++;
+		}
+	    }
+	    index++;
+	}
+
+    }
+
+    public static void radixSort(int[] array) {
+
+	int max = findMax(array);
+
+	int width = Integer.toString(max).length();
+
+	int w = 0;
+	while (w < width) {
+	    stableCountSort(array, w);
+	    w++;
+	}
+
+    }
+
+    static int findMax(int[] array) {
+	int i = 0;
+	int max = array[i];
+	while (i < array.length) {
+	    if (array[i] > max) {
+		max = array[i];
+	    }
+	    i++;
+	}
+	return max;
+    }
+
+    public static void stableCountSort(int[] array, int w) {
+	int length = array.length;
+	int digits[] = getDigits(array, w);
+	int freqArray[] = getFrequencyArray(array, digits);
+	adjustFrequency(freqArray);
+	sort(array, digits, freqArray);
+
+    }
+
+    public static void sort(int[] array, int[] digits, int[] freqArray) {
+	int length = array.length;
+	int temp[] = new int[length];
+
+	int i = length - 1;
+	while (i >= 0) {
+
+	    int index = freqArray[digits[i]] - 1;
+	    freqArray[digits[i]] = index;
+	    temp[index] = array[i];
+	    i--;
+	}
+
+	System.arraycopy(temp, 0, array, 0, temp.length);
+
+    }
+
+    static int[] getFrequencyArray(int[] array, int[] digits) {
+	int freqArray[] = new int[10];
+	int i = 0;
+	while (i < array.length) {
+	    int value = digits[i];
+	    freqArray[value] = freqArray[value] + 1;
+	    i++;
+	}
+	return freqArray;
+    }
+
+    static int[] getDigits(int[] array, int w) {
+
+	int length = array.length;
+	int digits[] = new int[length];
+	int i = 0;
+	while (i < length) {
+	    digits[i] = getDigit(array[i], w);
+	    i++;
+	}
+	return digits;
+    }
+
+    static int getDigit(int a, int w) {
+
+	int n = 10;
+	int q = a;
+	int i = 0;
+	int r = -1;
+	while (i <= w) {
+	    r = q % n;
+	    q = q / n;
+	    if (q == 0 && r == 0) {
+		break;
+	    }
+	    i++;
+	}
+
+	return r;
+    }
+
+    static void adjustFrequency(int[] frequencyArray) {
+	int i = 0;
+	int sum = 0;
+	int length = frequencyArray.length;
+	while (i < length) {
+	    sum = frequencyArray[i] + sum;
+	    frequencyArray[i] = sum;
+	    i++;
+	}
+
+    }
+
+    static public int Oddonacci(int n) {
+	if (n <= 0) {
+	    return 0;
+	}
+	if (n <= 3) {
+	    return 1;
+	}
+	return Oddonacci(n - 1) + Oddonacci(n - 2) + Oddonacci(n - 3);
+    }
+
+    public static void mergeSortDescending(int[] array) {
+
+	mergeSortDescending(array, 0, array.length - 1);
+
+    }
+
+    private static void mergeSortDescending(int[] array, int p, int r) {
+
+	if (p == r) {
+	    return;
+	}
+
+	int q = (p + r) / 2;
+	mergeSortDescending(array, p, q);
+	mergeSortDescending(array, q + 1, r);
+
+	if (array[q] < array[q + 1]) {
+	    int[] lhs = Arrays.copyOfRange(array, p, q + 1);
+	    int[] rhs = Arrays.copyOfRange(array, q + 1, r + 1);
+
+	    int i = p;
+	    int x = 0;
+	    int y = 0;
+	    while (i <= r) {
+		if (lhs[x] > rhs[y]) {
+		    array[i] = lhs[x];
+		    i++;
+		    x++;
+		} else {
+		    array[i] = rhs[y];
+		    i++;
+		    y++;
+		}
+
+		if (y == rhs.length) {
+		    while (x < lhs.length) {
+			array[i] = lhs[x];
+			i++;
+			x++;
+		    }
+		}
+
+		if (x == lhs.length) {
+		    break;
+		}
+
+	    }
+	}
+    }
+
+    public static void insertionSort_Recursion(int[] array) {
+	insertionSort_Recursion(array, array.length - 1);
+    }
+
+    private static void insertionSort_Recursion(int[] array, int index) {
+	if (index == 0) {
+	    return;
+	}
+
+	// making sure that array index-1 is sorted
+	insertionSort_Recursion(array, index - 1);
+
+	int value = array[index];
+	if (array[index - 1] > value) {
+	    // swap
+	    array[index] = array[index - 1];
+	    array[index - 1] = value;
+	    // resort
+	    insertionSort_Recursion(array, index - 1);
+
+	} else {
+	    // nothing to do
+	    return;
+	}
+
+    }
+
+    public static void radixSort(String[] array) {
+	int max = array[0].length();
+	int i = 1;
+	while (i < array.length) {
+	    int wordLength = array[i].length();
+	    if (wordLength > max) {
+		max = wordLength;
+	    }
+	    i++;
+	}
+
+	int index = 0;
+	while (index < max) {
+
+	    // Extract character + Counter
+	    int[] characterCounter = new int[95];
+	    int j = 0;
+	    while (j < array.length) {
+		String word = array[j];
+		int delta = max - word.length();
+		char character = index < delta ? 32 : word.charAt(max - index
+			- 1);
+		int characterIndex = character - 32;
+		characterCounter[characterIndex]++;
+		j++;
+	    }
+
+	    // Frequency
+	    int k = 1;
+	    while (k < characterCounter.length) {
+		characterCounter[k] = characterCounter[k]
+			+ characterCounter[k - 1];
+		k++;
+	    }
+
+	    String[] temp = Arrays.copyOf(array, array.length);
+	    int z = temp.length - 1;
+	    while (z >= 0) {
+		String word = temp[z];
+		int delta = max - word.length();
+		char character = index < delta ? 32 : word.charAt(max - index
+			- 1);
+		int characterIndex = character - 32;
+		int pos = characterCounter[characterIndex] - 1;
+		characterCounter[characterIndex] = pos;
+		array[pos] = temp[z];
+		z--;
+	    }
+	    index++;
+	}
+	System.out.println(Arrays.toString(array));
     }
 
 }
