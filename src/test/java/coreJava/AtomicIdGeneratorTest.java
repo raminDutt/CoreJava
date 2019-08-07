@@ -12,11 +12,15 @@ import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.mockito.Mock;
+import static org.mockito.Mockito.*;
 
 import com.google.code.tempusfugit.concurrency.ConcurrentRule;
 import com.google.code.tempusfugit.concurrency.RepeatingRule;
 import com.google.code.tempusfugit.concurrency.annotations.Concurrent;
 import com.google.code.tempusfugit.concurrency.annotations.Repeating;
+
+
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class AtomicIdGeneratorTest {
@@ -49,6 +53,9 @@ public class AtomicIdGeneratorTest {
 			+ hashSet).isTrue();
 
 	count++;
+	
+	
+	
     }
 
     @Test

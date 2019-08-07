@@ -6,11 +6,11 @@ public class DoublyLinkedList<E> {
     Node<E> tail = null;
     private int size = 0;
 
-    static class Node<E> {
+    static class Node<T> {
 
-	Node<E> prev = null;
-	E element;
-	Node<E> next = null;
+	Node<T> prev = null;
+	T element;
+	Node<T> next = null;
     }
 
     public void addToFront(E e) {
@@ -99,9 +99,7 @@ public class DoublyLinkedList<E> {
 	head = head.next;
 	if (head != null) {
 	    head.prev = null;
-	}
-	else
-	{
+	} else {
 	    tail = null;
 	}
 
@@ -113,15 +111,13 @@ public class DoublyLinkedList<E> {
 
     public E removeFromTail() {
 
-	if(size == 0)
+	if (size == 0)
 	    return null;
 	Node<E> temp = tail;
 	tail = tail.prev;
 	if (tail != null) {
 	    tail.next = null;
-	}
-	else
-	{
+	} else {
 	    head = tail;
 	}
 
@@ -129,6 +125,34 @@ public class DoublyLinkedList<E> {
 	temp.next = null;
 	size--;
 	return temp.element;
+    }
+
+    public boolean addBefore(E newElement, E neighbor) {
+	Node<E> iterator = this.head;
+	while (iterator != null) {
+	    E element = iterator.element;
+	    if (element.equals(neighbor)) {
+		Node<E> node = new Node<>();
+		node.element = newElement;
+		if (iterator.prev == null) {
+		    node.next = iterator;
+		    iterator.prev = node;
+		    this.head = node;
+
+		} else {
+
+		    node.prev = iterator.prev;
+		    iterator.prev.next = node;
+		    node.next = iterator;
+		    iterator.prev = node;
+		}
+		size++;
+		return true;
+	    }
+	    iterator = iterator.next;
+	}
+	return false;
+
     }
 
 }

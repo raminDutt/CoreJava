@@ -18,16 +18,23 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.annotation.Annotation;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -80,6 +87,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.PriorityQueue;
 import java.util.Locale.Category;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -96,6 +104,7 @@ import java.util.TreeSet;
 import java.util.Vector;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -105,8 +114,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -127,8 +138,20 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
+import javax.json.Json;
+import javax.json.JsonPatch;
+import javax.json.JsonPatchBuilder;
+import javax.json.JsonValue;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServlet;
+import javax.ws.rs.core.StreamingOutput;
+import javax.ws.rs.core.UriBuilder;
 
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
+import org.apache.commons.io.DirectoryWalker.CancelException;
+import org.apache.commons.io.output.ChunkedOutputStream;
+import org.omg.CORBA.IntHolder;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -142,21 +165,351 @@ import annotations.Cloneable2;
 import annotations.Resource;
 import annotations.TestCaseEnigma;
 import annotations.Todo;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.CollectionType;
+import com.fasterxml.jackson.databind.type.MapType;
+import com.googlecode.catchexception.throwable.ThrowableNotThrownAssertionError;
+
+import coreJava.Fridge.InnerFridge;
+import coreJava.annotations.QuadrantFour;
+import coreJava.annotations.QuadrantOne;
+import coreJava.annotations.QuadrantThree;
+import coreJava.annotations.QuadrantTwo;
 import framework.IPlugin;
 
 public class Root {
 
-    public static void main(String args[]) throws Exception {
+    @Target(ElementType.LOCAL_VARIABLE)
+    public @interface Ramin {
 
-	
-	List<IPlugin> iramin = IPlugin.INSTANCE;
-	iramin.forEach(plugin -> System.out.println(plugin.getName()));
-	System.out.println("The end");
+	public static class Factory implements Ramin {
+	    public static Factory get() {
+		return new Factory();
+	    }
 
-	
+	    @Override
+	    public Class<? extends Annotation> annotationType() {
+		return Ramin.class;
+	    }
+	}
+
     }
 
-    public static String getValueFromCache( Map<Integer, SoftReference<String>> cache) {
+    enum Car {
+	MERCEDEZ, BMW, HONDA
+
+    };
+
+    double x;
+
+    public String name = "Ramin";
+
+    public class Counter {
+
+	ThreadLocal<Integer> counter = ThreadLocal.withInitial(() -> 0);
+
+	public Counter() {
+	    // counter.set(10);
+	}
+
+	void increment() {
+	    counter.set(counter.get() + 1);
+	}
+    }
+
+    public static void main(String args[])  {
+
+    }
+    
+    public <T> T[]  f_1()
+    {
+	T[] array;
+	Object[] objects = new Object[10];
+	array = (T[]) objects;
+	return array;
+    }
+
+    public void someTask_1() throws InterruptedException{
+	Root root = new Root();
+	Counter counter = root.new Counter();
+
+	Runnable task = () -> {
+	    int i = 0;
+	    while (i < 100) {
+		counter.increment();
+		i++;
+	    }
+
+	    System.out.println(Thread.currentThread().getName() + ": "
+		    + counter.counter.get());
+
+	};
+	Thread thread = new Thread(task);
+	thread.start();
+	thread.join();
+	System.out.println(Thread.currentThread().getName() + ": "
+		+ counter.counter.get());
+    }
+
+    public void someTask() {
+	Runnable task = () -> {
+	    System.out.println(this.getClass().getName());
+
+	};
+
+	new Thread(task).start();
+    }
+
+    public void f2(Integer key) {
+	key = new Integer(15);
+
+    }
+
+    public static Object f() {
+	List<Employee> arrayList2 = new ArrayList();
+	Employee employee = new Employee();
+	arrayList2.add(employee);
+	Manager manager = new Manager();
+	arrayList2.add(manager);
+	return arrayList2;
+    }
+
+    public static int finalMethod() {
+	int x = 100;
+	try {
+	    return x;
+	} finally {
+	    System.out.println("printing fibnally");
+	}
+    }
+
+    private void encapsulatingAnnotation() {
+
+	@QuadrantOne
+	int spaceOne;
+
+	@QuadrantTwo
+	int spaceTwo;
+
+	@QuadrantThree
+	int spaceThree;
+
+	@QuadrantFour
+	int spaceFour;
+
+    }
+
+    private static void doSoemthing() throws InterruptedException {
+
+	if (!Thread.currentThread().isInterrupted()) {
+	    // doAtomic Work_1
+	} else {
+	    throw new InterruptedException();
+	}
+
+	if (!Thread.currentThread().isInterrupted()) {
+	    // doAtomic Work_3
+	} else {
+	    throw new InterruptedException();
+	}
+
+	if (!Thread.currentThread().isInterrupted()) {
+	    // doAtomic Work_3
+	} else {
+	    throw new InterruptedException();
+	}
+
+    }
+
+    public static void smartDownload() {
+	ExecutorService executor = Executors.newCachedThreadPool();
+	Callable<String> task = () -> {
+	    try {
+		download();
+	    } catch (InterruptedException ex) {
+		Thread.currentThread().interrupted();
+		return null;
+	    }
+	    return "Completed";
+
+	};
+	Future<String> future = executor.submit(task);
+
+	try {
+	    future.get(1, TimeUnit.SECONDS);
+	} catch (TimeoutException timeoutException) {
+	    future.cancel(true);
+
+	} catch (InterruptedException e) {
+	    e.printStackTrace();
+	} catch (ExecutionException e) {
+	    e.printStackTrace();
+	}
+
+	executor.shutdown();
+    }
+
+    private static void download() throws InterruptedException {
+	while (true) {
+	    if (Thread.currentThread().isInterrupted()) {
+		System.out.println("Interrupted : "
+			+ Thread.currentThread().isInterrupted());
+		throw new InterruptedException();
+	    }
+	    System.out.println(Thread.currentThread().isInterrupted());
+	}
+
+    }
+
+    public <T> T[] genFunction(T... x) {
+	return x;
+    }
+
+    public BigDecimal getFromCache(Integer key) {
+	BigDecimal value = null;
+	ConcurrentMap<Integer, SoftReference<Future<BigDecimal>>> cache = new ConcurrentHashMap<>();
+	Function<Integer, BigDecimal> expensiveComputation = input -> {
+	    // Very expensive Computation
+	    BigDecimal result = null;
+	    return result;
+	};
+
+	SoftReference<Future<BigDecimal>> softReference = cache.get(key);
+
+	if (softReference == null) {
+
+	    Callable<BigDecimal> task = () -> {
+		return expensiveComputation.apply(key);
+	    };
+
+	    FutureTask<BigDecimal> futureTask = new FutureTask<BigDecimal>(task);
+	    SoftReference<Future<BigDecimal>> softReference2 = new SoftReference<Future<BigDecimal>>(
+		    futureTask);
+	    softReference = cache.putIfAbsent(key, softReference2);
+	    if (softReference == null) {
+		softReference = softReference2;
+		futureTask.run();
+
+	    }
+	}
+
+	Future<BigDecimal> future = softReference.get();
+	try {
+	    value = future.get();
+	} catch (InterruptedException | ExecutionException e) {
+	    cache.remove(key);
+	}
+	return value;
+    }
+
+    public static void concurentHashMapCreationFromMap() {
+	Map<String, StringBuilder> map = new HashMap<>();
+	StringBuilder builder = new StringBuilder("Montreal");
+	map.put("Ramin", builder);
+
+	Map<String, StringBuilder> map2 = new ConcurrentHashMap<>(map);
+	System.out.println("****Before*****");
+	System.out.println(map);
+	System.out.println(map2);
+
+	System.out.println("****After*****");
+	map.put("Ramin", map.get("Ramin").append("Canada"));
+	System.out.println(map);
+	System.out.println(map2);
+
+    }
+
+    public static void escapingThis() {
+	List<InnerFridge> innerFridges = new ArrayList<>();
+
+	Runnable task_0 = () -> {
+	    System.out.println(Thread.currentThread().getName()
+		    + ": task 0 started ...");
+	    InnerFridge innerFridge = innerFridges.get(0);
+	    if (innerFridge != null) {
+		System.out.println("Start of doing something");
+		innerFridge.doSomething();
+		System.out.println("End of doing something");
+	    }
+	    System.out.println("task 0 ended ...");
+	};
+
+	Runnable task_1 = () -> {
+	    System.out.println(Thread.currentThread().getName()
+		    + "; task 1 started ...");
+	    Fridge fridge = new Fridge(innerFridges);
+	    System.out.println("task 1 ended ...");
+	};
+	Thread thread_0 = new Thread(task_0);
+	Thread thread_1 = new Thread(task_1);
+	thread_1.start();
+	thread_0.start();
+    }
+
+    public <E extends Number> void f(List<E> list) {
+	E e = list.get(0);
+	list.add(e);
+	Number number = new Integer(10);
+	// list.add(number);
+
+    }
+
+    public void f2(List<? extends Number> list) {
+	Number e = list.get(0);
+	// list.add(e);
+
+    }
+
+    private static void jsr_374_pointer() {
+	String jsonString = "{\"firstName\":\"John\",\"lastName\":\"Chen\", \"Age\":\"38\"}";
+	StringBuilder stringBuilder = new StringBuilder(jsonString);
+
+	try (Reader reader = new StringReader(jsonString);) {
+
+	    javax.json.JsonReader jsonReader = Json.createReader(reader);
+	    javax.json.JsonPointer jsonPointer = Json.createPointer("/city");
+
+	    javax.json.JsonObject jsonObject = (javax.json.JsonObject) jsonReader
+		    .read();
+
+	    JsonValue replacemenetValue = Json.createValue("Montreal");
+
+	    jsonObject = jsonPointer.add(jsonObject, replacemenetValue);
+
+	    System.out.println(jsonObject.toString());
+	} catch (Exception exception) {
+	    exception.printStackTrace();
+	}
+    }
+
+    public static void jsonP1() throws IOException, JsonParseException,
+	    JsonMappingException {
+	String jsonString = "[{\"firstName\":\"John\",\"lastName\":\"Chen\", \"Age\":\"38\"}, {\"firstName\":\"John2\",\"lastName\":\"Chen2\"}]";
+	String jsonString2 = "{\"firstName\":\"John\",\"lastName\":\"Chen\", \"Age\":\"38\"}";
+	ObjectMapper objectMapper = new ObjectMapper();
+
+	List<Map<String, String>> properties = objectMapper.readValue(
+		jsonString, new TypeReference<List<Map<String, String>>>() {
+		});
+	System.out.println(properties);
+	MapType mapType = objectMapper.getTypeFactory().constructMapType(
+		Map.class, String.class, String.class);
+	CollectionType collectionType = objectMapper.getTypeFactory()
+		.constructCollectionType(List.class, mapType);
+	Map<String, String> properties2 = objectMapper.readValue(jsonString2,
+		mapType);
+	System.out.println(properties2);
+	List<Map<String, String>> properties3 = objectMapper.readValue(
+		jsonString, collectionType);
+	System.out.println(properties3);
+    }
+
+    public static String getValueFromCache(
+	    Map<Integer, SoftReference<String>> cache) {
 	Collection<SoftReference<String>> values = cache.values();
 	Iterator<SoftReference<String>> iterator = values.iterator();
 	while (iterator.hasNext()) {
@@ -5622,6 +5975,104 @@ public class Root {
 	    index++;
 	}
 	System.out.println(Arrays.toString(array));
+    }
+
+    public List<Integer> challenge2(List<Integer> integers) {
+
+	Map<Integer, Integer> map = new HashMap<>();
+
+	for (Integer i : integers) {
+	    map.put(i, i);
+	}
+
+	List<Integer> result = new LinkedList<>(map.values());
+
+	Set<Integer> s1 = new HashSet<Integer>();
+	Set<Integer> s2 = new HashSet<Integer>();
+	for (Integer i : integers) {
+	    if (s1.contains(i)) {
+		s2.add(i);
+	    }
+	    s1.add(i);
+	}
+
+	Set<Integer> s3 = new HashSet<Integer>(s1);
+	s3.removeAll(s2);
+	System.out.println("duplicates= " + s2);
+	System.out.println("Non-duplicates= " + s3);
+	return result;
+    }
+
+    public int binarySearch2(int[] array, int value) {
+	return binarySearch2(array, 0, array.length - 1, value);
+    }
+
+    public int binarySearch2(int[] array, int start, int end, int value) {
+
+	int mid = (start + end) / 2;
+	if (array[mid] == value) {
+	    return mid;
+	}
+
+	if (start == end) {
+	    return -1;
+	}
+
+	if (array[mid] > value) {
+	    end = mid - 1;
+
+	} else {
+	    start = mid + 1;
+	}
+	return binarySearch2(array, start, end, value);
+
+    }
+
+    private void sort(int[] array) {
+
+	int i = 1;
+	while (i < array.length) {
+	    int temp = array[i];
+	    int j = i - 1;
+	    while (j >= 0) {
+		if (array[j] > temp) {
+		    array[j + 1] = array[j];
+		    if (j == 0) {
+			array[j] = temp;
+		    }
+		} else {
+		    array[j + 1] = temp;
+		    break;
+		}
+		j--;
+	    }
+	    i++;
+	}
+    }
+
+    public String bfs(int[][] adjacencyMatrix, int root) {
+	int row = adjacencyMatrix.length;
+	int col = adjacencyMatrix[0].length;
+	Queue<Integer> queue = new LinkedList<Integer>();
+	Set<Integer> toBeVisited = new HashSet<Integer>();
+	queue.add(root);
+	toBeVisited.add(root);
+	String result = null;
+
+	while (!queue.isEmpty()) {
+	    int i = queue.remove();
+	    result = result == null ? Integer.toString(i) : result + "-" + i;
+	    int j = 0;
+	    while (j < col) {
+		int vertex = adjacencyMatrix[i][j];
+		if (vertex == 1 && !toBeVisited.contains(j)) {
+		    queue.add(j);
+		    toBeVisited.add(j);
+		}
+		j++;
+	    }
+	}
+	return result;
     }
 
 }

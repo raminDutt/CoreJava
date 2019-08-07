@@ -8,17 +8,17 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 //import static org.assertj.core.api.Assertions.*;
 
-
-
-
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.IntSupplier;
 import java.util.stream.Collectors;
@@ -1207,77 +1207,143 @@ public class RootTest {
     public void testOddonacci(int n, int expected) {
 	int actual = Root.Oddonacci(n);
 	assertThat(actual).isEqualTo(expected);
-	
+
 	int i = 0;
-	while(i < 100)
-	{
+	while (i < 100) {
 	    System.out.println(Root.Oddonacci(i));
 	    i++;
 	}
     }
-    
-    @Test 
-    @Repeating(repetition=100)
-    public void mergeSortDescending()
-    {
+
+    @Test
+    @Repeating(repetition = 100)
+    public void mergeSortDescending() {
 	int[] actual = new Random().ints(-100, 100).limit(100).toArray();
-	Integer[] expectedInteger = Arrays.stream(actual).boxed().toArray(Integer[]::new);
+	Integer[] expectedInteger = Arrays.stream(actual).boxed()
+		.toArray(Integer[]::new);
 	Comparator<Integer> comp = Integer::compare;
-	
-	//Comparator<Integer> comparator = Integer::compare
-	Comparator<Integer> comparator = (x,y) -> {	  
+
+	// Comparator<Integer> comparator = Integer::compare
+	Comparator<Integer> comparator = (x, y) -> {
 	    return Integer.compare(x, y);
 	};
 
 	Arrays.sort(expectedInteger, comparator.reversed());
-	int[] expected = Stream.of(expectedInteger).mapToInt(Integer::intValue).toArray();
+	int[] expected = Stream.of(expectedInteger).mapToInt(Integer::intValue)
+		.toArray();
 	Root.mergeSortDescending(actual);
 	assertThat(actual).isEqualTo(expected);
-	
+
     }
-    
-    
+
     @Test
-    @Repeating(repetition=100)
-    public void testInsertionSortRecursion()
-    {
+    @Repeating(repetition = 100)
+    public void testInsertionSortRecursion() {
 	int[] actual = new Random().ints(-100, 100).limit(10).toArray();
 	int[] expected = Arrays.copyOf(actual, actual.length);
 	Arrays.sort(expected);
 	Root.insertionSort_Recursion(actual);
 	assertThat(actual).isEqualTo(expected);
-	
-	
+
     }
-    
+
     @Test
-    //@Repeating(repetition=100)
-    public void testRadixSort2()
-    {
+    // @Repeating(repetition=100)
+    public void testRadixSort2() {
 	String[] actual = new String[10];
-	
+
 	int i = 0;
-	while(i < actual.length)
-	{
+	while (i < actual.length) {
 	    int length = new Random().nextInt(10);
 	    int j = 0;
 	    StringBuilder stringBuilder = new StringBuilder();
-	    while(j < length)
-	    {
-		char character = (char)(new Random().nextInt(95)+32);
+	    while (j < length) {
+		char character = (char) (new Random().nextInt(95) + 32);
 		stringBuilder.append(character);
 		j++;
 	    }
 	    actual[i] = stringBuilder.toString();
 	    i++;
 	}
-	
+
 	String[] expected = Arrays.copyOf(actual, actual.length);
 	Arrays.sort(expected);
 	Root.radixSort(actual);
 	assertThat(actual).isEqualTo(expected);
+
+    }
+
+    @Test
+    public void testHashTableChallenge2() {
+	Root root = new Root();
+	Random random = new Random();
+	List<Integer> integers = new java.util.LinkedList<>();
+	int i = 0;
+	while (i < 20) {
+	    integers.add(random.nextInt(10));
+	    i++;
+	}
+
+	System.out.println(integers);
+
+	Set<Integer> set = new HashSet<>(integers);
+	List<Integer> expected = new java.util.LinkedList<>(set);
+
+	List<Integer> actual = root.challenge2(integers);
+	assertThat(actual).containsExactlyInAnyOrderElementsOf(expected);
+
+	System.out.println(expected);
+	System.out.println(actual);
+
+    }
+
+    @Test
+    @Repeating(repetition = 100)
+    public void binarySearch() {
+	Root root = new Root();
+	Random random = new Random();
+	Set<Integer> set = random.ints(-100, 100).limit(100).boxed()
+		.collect(Collectors.toSet());
+	int[] array = set.stream().mapToInt(i -> i.intValue()).toArray();
+	Arrays.sort(array);
+	int expected = random.nextInt(array.length);
+	int actual = root.binarySearch2(array, array[expected]);
+	assertThat(actual).as(
+		"value = " + array[expected] + " ,array = "
+			+ Arrays.toString(array)).isEqualTo(expected);
+
+    }
+
+    @Test
+    public void breadthFirstSearchTest() {
+
+	int[][] adjacencyMatrix = new int[8][8];
+	adjacencyMatrix[0][1] = 1;
+	adjacencyMatrix[0][2] = 1;
+	adjacencyMatrix[0][4] = 1;
+	adjacencyMatrix[1][3] = 1;
+	adjacencyMatrix[1][5] = 1;
+	adjacencyMatrix[2][6] = 1;
+	adjacencyMatrix[4][3] = 1;
+	adjacencyMatrix[3][7] = 1;
+	adjacencyMatrix[5][7] = 1;
+	adjacencyMatrix[6][7] = 1;
+
+
+	Root root = new Root();
+	String actualResult = root.bfs(adjacencyMatrix, 0);
+	String expectedResult = "0-1-2-4-3-5-6-7";
+	assertThat(actualResult).isEqualTo(expectedResult);
 	
+	List<List<Integer>> aM = new ArrayList<List<Integer>>();
+	List<Integer> neighbors_0 = new ArrayList<>();
+	neighbors_0.add(1);
+	neighbors_0.add(2);
+	neighbors_0.add(4);
+	aM.add(0, neighbors_0);
+
     }
     
+   
 
 }

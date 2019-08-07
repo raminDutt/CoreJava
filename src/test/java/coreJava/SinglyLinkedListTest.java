@@ -167,6 +167,25 @@ public class SinglyLinkedListTest {
     }
     
     @Test
+    public void testRemoveFromEmpty() {
+	SinglyLinkedList<Integer> linkedList = new SinglyLinkedList<Integer>();
+	linkedList.remove();
+
+	Function<SinglyLinkedList<Integer>, List<Integer>> extracting = (sll) -> {
+	    List<Integer> list = new ArrayList<>();
+	    SinglyLinkedList<Integer>.Node node = sll.head;
+	    while (node != null) {
+		list.add(node.value);
+		node = node.next;
+	    }
+	    return list;
+	};
+	List<Integer> list = extracting.apply(linkedList);
+	assertThat(list).isEmpty();
+	assertThat(list.size()).isEqualTo(0);
+    }
+    
+    @Test
     public void testRemoveWithIndexFromEnd() {
 	SinglyLinkedList<Integer> linkedList = new SinglyLinkedList<Integer>();
 	linkedList.add(5);
@@ -214,6 +233,49 @@ public class SinglyLinkedListTest {
 		    linkedList.remove(200);
 		});
 
+    }
+    
+    @Test
+    public void insertSorted()
+    {
+	SinglyLinkedList<Integer> linkedList = new SinglyLinkedList<Integer>();
+	linkedList.insertSort(4);
+	linkedList.insertSort(2);
+	linkedList.insertSort(1);
+	linkedList.insertSort(5);
+	linkedList.insertSort(3);
+	
+	Function<SinglyLinkedList<Integer>, int[]> extract = list -> {
+	  int[] array = new int[list.size()];
+	  SinglyLinkedList<Integer>.Node head= list.head;
+	  int i = 0;
+	  while(head != null)
+	  {
+	      array[i] = head.value;
+	      head = head.next;
+	      i++;
+	  }
+	  return array;
+	};
+	
+	int[] actual = extract.apply(linkedList);
+	assertThat(actual).containsExactly(1,2,3,4,5);
+	assertThat(linkedList.size()).isEqualTo(5);
+	linkedList = new SinglyLinkedList<Integer>();
+	linkedList.add(0);
+	linkedList.add(2);
+	linkedList.add(5);
+
+	actual = extract.apply(linkedList);
+	assertThat(actual).containsExactly(5,2,0);
+	assertThat(linkedList.size()).isEqualTo(3);
+	
+	linkedList.insertSort(3);
+	linkedList.insertSort(6);
+	actual = extract.apply(linkedList);
+	assertThat(actual).containsExactly(0,2,3,5,6);
+	assertThat(linkedList.size()).isEqualTo(5);
+	
     }
 
 }

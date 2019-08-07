@@ -4,8 +4,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.Assert.*;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Function;
+
+import org.assertj.core.api.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import annotationProcessor.JavaDocProcessor.Return;
 
 public class DoublyLinkedListTest {
 
@@ -76,13 +83,13 @@ public class DoublyLinkedListTest {
     }
 
     @Test
-    public void shouldThrowIndexOutOfBoundExceptionWhenAddingWithIndex()
-    {
+    public void shouldThrowIndexOutOfBoundExceptionWhenAddingWithIndex() {
 	DoublyLinkedList<Integer> list = new DoublyLinkedList<>();
-	
-	assertThatExceptionOfType(IndexOutOfBoundsException.class).isThrownBy(() -> {
-	    list.add(10,10);
-	});
+
+	assertThatExceptionOfType(IndexOutOfBoundsException.class).isThrownBy(
+		() -> {
+		    list.add(10, 10);
+		});
     }
 
     @Test
@@ -101,7 +108,7 @@ public class DoublyLinkedListTest {
 	assertThat(actual).isEqualTo(expected);
 	assertThat(list.size()).isEqualTo(4);
     }
-    
+
     @Test
     public void removeFromHeadWithListOfSizeEqualThanOne() {
 	DoublyLinkedList<Integer> list = new DoublyLinkedList<>();
@@ -113,8 +120,8 @@ public class DoublyLinkedListTest {
 	String expected = "null";
 	assertThat(actual).isEqualTo(expected);
 	assertThat(list.size()).isEqualTo(0);
-	
-	//use case 3: removing from a list
+
+	// use case 3: removing from a list
 	list = new DoublyLinkedList<>();
 	list.addToTail(10);
 	result = list.removeFromHead();
@@ -125,7 +132,7 @@ public class DoublyLinkedListTest {
 	assertThat(list.size()).isEqualTo(0);
 
     }
-    
+
     @Test
     public void removeFromHeadWithEmptyList() {
 	DoublyLinkedList<Integer> list = new DoublyLinkedList<>();
@@ -137,8 +144,8 @@ public class DoublyLinkedListTest {
 	String expected = "null";
 	assertThat(actual).isEqualTo(expected);
 	assertThat(list.size()).isEqualTo(0);
-	
-	//use case 3: removing from a list
+
+	// use case 3: removing from a list
 	list = new DoublyLinkedList<>();
 	list.addToTail(10);
 	result = list.removeFromHead();
@@ -149,7 +156,7 @@ public class DoublyLinkedListTest {
 	assertThat(list.size()).isEqualTo(0);
 
     }
-    
+
     @Test
     public void removeFromTailWithListSizeGreaterThanOne() {
 	DoublyLinkedList<Integer> list = new DoublyLinkedList<>();
@@ -167,7 +174,7 @@ public class DoublyLinkedListTest {
 	assertThat(list.size()).isEqualTo(4);
 
     }
-    
+
     @Test
     public void removeFromTailWithListSizeGreaterEqualOne() {
 	DoublyLinkedList<Integer> list = new DoublyLinkedList<>();
@@ -181,7 +188,7 @@ public class DoublyLinkedListTest {
 	assertThat(list.size()).isEqualTo(0);
 
     }
-    
+
     @Test
     public void removeFromTailWithEmptyList() {
 	DoublyLinkedList<Integer> list = new DoublyLinkedList<>();
@@ -195,4 +202,45 @@ public class DoublyLinkedListTest {
 
     }
 
+    @Test
+    public void addBeforeTest() {
+	DoublyLinkedList<Integer> doublyLinkedList = new DoublyLinkedList<>();
+	doublyLinkedList.addToTail(10);
+	doublyLinkedList.addToTail(20);
+	doublyLinkedList.addToTail(30);
+	doublyLinkedList.addToTail(40);
+	doublyLinkedList.addToTail(50);
+
+	boolean result = doublyLinkedList.addBefore(35, 5);
+	assertThat(result).isFalse();
+	result = doublyLinkedList.addBefore(35, 30);
+	assertThat(result).isTrue();
+	Function<DoublyLinkedList<Integer>, int[]> function = doubly -> {
+	    int[] array = new int[doublyLinkedList.size()];
+	    DoublyLinkedList.Node<Integer> head = doublyLinkedList.head;
+	    int i = 0;
+	    while (head != null) {
+		array[i] = head.element;
+		head = head.next;
+		i++;
+	    }
+
+	    return array;
+	};
+
+	int[] array = (int[]) function.apply(doublyLinkedList);
+	assertThat(array).containsExactly(10, 20, 35, 30, 40, 50);
+	assertThat(doublyLinkedList.size()).isEqualTo(6);
+
+	result = doublyLinkedList.addBefore(5, 10);
+	assertThat(result).isTrue();
+	array = (int[]) function.apply(doublyLinkedList);
+	assertThat(array).containsExactly(5, 10, 20, 35, 30, 40, 50);
+
+	result = doublyLinkedList.addBefore(45, 50);
+	assertThat(result).isTrue();
+	array = (int[]) function.apply(doublyLinkedList);
+	assertThat(array).containsExactly(5, 10, 20, 35, 30, 40, 45, 50);
+
+    }
 }

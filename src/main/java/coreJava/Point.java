@@ -10,7 +10,7 @@ import annotations.Todo;
 import annotations.Transient;
 
 @Serializable
-public class Point implements Cloneable {
+public  class Point implements Cloneable {
 	double coordinate[] = new double[2];
 	private static long serialVersionUID = 841912001828677276L;
 	protected double x=0;
